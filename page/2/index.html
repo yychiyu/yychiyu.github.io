@@ -102,7 +102,7 @@
 
 
 <nav class="site-nav">
-  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">8</span></a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">3</span></a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">15</span></a></li>
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">10</span></a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">3</span></a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">21</span></a></li>
   </ul>
 </nav>
 
@@ -139,7 +139,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">15</span>
+          <span class="site-state-item-count">21</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -150,7 +150,7 @@
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-count">10</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -167,6 +167,558 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/08/%E4%BD%BF%E7%94%A8uv%E7%AE%A1%E7%90%86python%E8%99%9A%E6%8B%9F%E7%8E%AF%E5%A2%83/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+      <meta itemprop="description" content="yychiyu">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hexo">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/12/08/%E4%BD%BF%E7%94%A8uv%E7%AE%A1%E7%90%86python%E8%99%9A%E6%8B%9F%E7%8E%AF%E5%A2%83/" class="post-title-link" itemprop="url">使用uv管理python虚拟环境</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2025-12-08 11:16:19 / 修改时间：11:41:53" itemprop="dateCreated datePublished" datetime="2025-12-08T11:16:19+08:00">2025-12-08</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>官网：<a target="_blank" rel="noopener" href="https://docs.astral.sh/uv/">https://docs.astral.sh/uv/</a><br>使用uv来管理虚拟环境，相比pip有至少10倍的性能提升<br>功能</p>
+<ul>
+<li>管理python版本</li>
+<li>管理第三方库的版本</li>
+<li>拥有全局第三方库的缓存</li>
+<li>安装uv不需要python环境</li>
+<li>多平台支持</li>
+</ul>
+<h1 id="安装uv"><a href="#安装uv" class="headerlink" title="安装uv"></a>安装uv</h1><p>linux</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">curl -LsSf https://astral.sh/uv/install.sh | sh</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">或者wget（效果一样）</span></span><br><span class="line">wget -qO- https://astral.sh/uv/install.sh | sh</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>windows </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">powershell -ExecutionPolicy ByPass -c &quot;irm https://astral.sh/uv/install.ps1 | iex&quot;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>mac安装后必须把$HOME&#x2F;.local&#x2F;bin这个路径加到环境变量PATH里面才可以正常使用uv工具，设置之后，使用uv –version 确认安装成功</p>
+<p>2.1. 卸载uv<br>卸载uv之前，先执行如下命令删除所有本地缓存文件<br>uv cache clean<br>rm -r “$(uv python dir)”<br>rm -r “$(uv tool dir)”</p>
+<h1 id="mac-linux"><a href="#mac-linux" class="headerlink" title="mac&#x2F;linux"></a>mac&#x2F;linux</h1><p>rm ~&#x2F;.local&#x2F;bin&#x2F;uv ~&#x2F;.local&#x2F;bin&#x2F;uvx</p>
+<h1 id="windows"><a href="#windows" class="headerlink" title="windows"></a>windows</h1><p>rm $HOME.local\bin\uv.exe<br>rm $HOME.local\bin\uvx.exe</p>
+<h1 id="基本使用"><a href="#基本使用" class="headerlink" title="基本使用"></a>基本使用</h1><p>管理python版本</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv python list</span><br></pre></td></tr></table></figure>
+<p>安装其他版本python</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv python install 3.12</span><br></pre></td></tr></table></figure>
+<p>寻找路径<br>uv python find 3.10</p>
+<p>选用python版本<br>uv python pin 版本号</p>
+<p>这个命令会在指定目录下创建一个.python-version文件，内容如下 </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">❯ uv python pin 3.10                                    </span><br><span class="line">Pinned `.python-version` to `3.10`</span><br><span class="line"></span><br><span class="line">❯ cat .python-version  </span><br><span class="line">3.10</span><br></pre></td></tr></table></figure>
+
+<p>创建虚拟环境</p>
+<p>第一种方式，<br>先创建好项目目录，设置python版本并初始化虚拟环境</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">uv python pin 3.10</span><br><span class="line">uv init</span><br></pre></td></tr></table></figure>
+
+<p>执行了uv init之后，会在当前目录下创建几个文件，同时也会在当前目录下执行git init创建出一个新的git仓库来</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">~/data/code/python/test_code                                                          </span><br><span class="line">❯ uv python pin 3.13</span><br><span class="line">Pinned `.python-version` to `3.13`</span><br><span class="line">~/data/code/python/test_code                                                                                   </span><br><span class="line">❯ uv init           </span><br><span class="line">Initialized project `test-code`</span><br><span class="line">~/data/code/python/test_code main ?6                                                                                          </span><br><span class="line">❯ ls</span><br><span class="line">README.md      main.py        pyproject.toml</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>方式二<br>在init之后添加一个项目名,会自动创建项目文件夹</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv init 项目名</span><br></pre></td></tr></table></figure>
+<p>如果需要指定特定的python版本，建议用第一种方式来创建项目，否则还需要手动修改pyproject.toml配置文件需要的python版本</p>
+<p>添加依赖</p>
+<p>比如依赖库</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">uv add requests</span><br><span class="line">uv add requests==版本号</span><br></pre></td></tr></table></figure>
+
+<p>执行了这个命令后，会在当前目录下创建.venv虚拟环境目录（在vscode里面可以选择这个目录作为虚拟环境，否则代码解析会有问题），并添加我们要的依赖项，同时会新增一个uv.lock文件，用于存放依赖项版本相关的信息。pyproject.toml文件中的dependencies字段也会包含需要的依赖项。</p>
+<p>运行程序</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv run 程序文件名[命令行参数]</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/06/win7%E5%92%8CUbuntu%E5%8F%8C%E7%B3%BB%E7%BB%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+      <meta itemprop="description" content="yychiyu">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hexo">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/12/06/win7%E5%92%8CUbuntu%E5%8F%8C%E7%B3%BB%E7%BB%9F/" class="post-title-link" itemprop="url">win7和Ubuntu双系统</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2025-12-06 10:19:51 / 修改时间：10:32:24" itemprop="dateCreated datePublished" datetime="2025-12-06T10:19:51+08:00">2025-12-06</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h1><p>1.ventoy启动盘<br>2. Ubuntu镜像<br>3. EasyBCD2.1.2.exe,装好Ubuntu后添加开机启动项</p>
+<h1 id="分出一个空磁盘给Ubuntu"><a href="#分出一个空磁盘给Ubuntu" class="headerlink" title="分出一个空磁盘给Ubuntu"></a>分出一个空磁盘给Ubuntu</h1><p>计算机磁盘管理</p>
+<ul>
+<li>如果是个空盘，直接右键删除卷，颜色变绿，表示可用空间</li>
+<li>如果没有空盘,选择剩余空间较大的，右键压缩卷，选择压缩大小，分出的盘可作为Ubuntu的系统盘<br>也可以进PE，用DiskGenius工具分配空间</li>
+</ul>
+<h1 id="安装Ubuntu系统"><a href="#安装Ubuntu系统" class="headerlink" title="安装Ubuntu系统"></a>安装Ubuntu系统</h1><p>使用Ventoy安装Ubuntu系统，此处省略</p>
+<h1 id="使用EasyBCD添加开机引导项"><a href="#使用EasyBCD添加开机引导项" class="headerlink" title="使用EasyBCD添加开机引导项"></a>使用EasyBCD添加开机引导项</h1><ol>
+<li>Add New Entry</li>
+<li>Operating Systems选择Linux&#x2F;BSD</li>
+<li>NeoSmartLinux</li>
+<li>Device选择Linux 190M  &#x2F;boot的那个盘</li>
+<li>Add Entry启动项就装上了</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/04/MBR%E5%92%8CGUID%E5%88%86%E5%8C%BA%E8%A1%A8%E9%80%89%E6%8B%A9%E6%8C%87%E5%8D%97/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+      <meta itemprop="description" content="yychiyu">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hexo">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/12/04/MBR%E5%92%8CGUID%E5%88%86%E5%8C%BA%E8%A1%A8%E9%80%89%E6%8B%A9%E6%8C%87%E5%8D%97/" class="post-title-link" itemprop="url">MBR和GUID分区表选择指南</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2025-12-04 20:21:10 / 修改时间：21:08:40" itemprop="dateCreated datePublished" datetime="2025-12-04T20:21:10+08:00">2025-12-04</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>当前的引导模式分UEFI和Legacy两种，分区表的选择与引导模式相关<br>UEFI对应的分区就是GUID分区(gpt);Legacy,则对应的分区类型是MBR。</p>
+<p>win10&#x2F;11支持UEFI模式优先选择GPT，老电脑或小容量硬盘选MBR</p>
+<h1 id="选GPT-GUID-的场景（多数新电脑）"><a href="#选GPT-GUID-的场景（多数新电脑）" class="headerlink" title="选GPT(GUID)的场景（多数新电脑）"></a>选GPT(GUID)的场景（多数新电脑）</h1><ul>
+<li>win10&#x2F;11系统</li>
+<li>硬盘容量&gt;2T </li>
+<li>主板支持UEFI启动</li>
+<li>需要分更多区（超过4个主分区）</li>
+<li>追求数据安全</li>
+</ul>
+<h1 id="选MBR的场景（老设备-特殊场景）"><a href="#选MBR的场景（老设备-特殊场景）" class="headerlink" title="选MBR的场景（老设备&#x2F;特殊场景）"></a>选MBR的场景（老设备&#x2F;特殊场景）</h1><ul>
+<li>Win7及以下的系统</li>
+<li>硬盘容量&lt;2TB</li>
+<li>主板只支持Legacy BIOS启动</li>
+<li>需要兼容老设备，要装多系统，其中包含Win7及以下</li>
+<li>用于工业设备和老服务器</li>
+</ul>
+<h1 id="为什么win10-11建议采用GUID？"><a href="#为什么win10-11建议采用GUID？" class="headerlink" title="为什么win10&#x2F;11建议采用GUID？"></a>为什么win10&#x2F;11建议采用GUID？</h1><p>UEFI新的主板引导项，图形界面，启动更快，UEFI只支持64位系统且磁盘分区必须为gpt模式。</p>
+<h1 id="选择MBR或GUID注意什么？"><a href="#选择MBR或GUID注意什么？" class="headerlink" title="选择MBR或GUID注意什么？"></a>选择MBR或GUID注意什么？</h1><ol>
+<li>启动模式和分区表必须匹配</li>
+<li>固态硬盘（SSD）优先选GPT+UEFI：能发挥快速启动速度，支持TRIM优化，延长寿命</li>
+<li>WIN7采用UEFT+GPT安装：原生Win7不支持，采用第三方PE安装后修复引导</li>
+<li>数据备份：转换类型会清空，要备份重要文件。</li>
+</ol>
+<h1 id="常见问题解答"><a href="#常见问题解答" class="headerlink" title="常见问题解答"></a>常见问题解答</h1><ul>
+<li>主板支持UEFI，需要装win7等老系统，也可以安装MBR。</li>
+<li>转换分区表类型会丢数据 </li>
+<li>DiskGenuis能改分区类型</li>
+<li>老电脑升级win10,原来MBR可以不改，如果硬盘&lt;2T,启动正常。若想体验快速启动，可备份数据后转换GUID（同时改主板启动模式）</li>
+<li>选错分区表类型，电脑会开不了机，GUID分区选主板UEFI启动，MBR选Legacy启动</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/03/%E8%AF%8D%E6%B1%87%E5%AD%A6%E4%B9%A0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+      <meta itemprop="description" content="yychiyu">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hexo">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/12/03/%E8%AF%8D%E6%B1%87%E5%AD%A6%E4%B9%A0/" class="post-title-link" itemprop="url">词汇学习</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025-12-03 22:43:07" itemprop="dateCreated datePublished" datetime="2025-12-03T22:43:07+08:00">2025-12-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-12-04 08:27:06" itemprop="dateModified" datetime="2025-12-04T08:27:06+08:00">2025-12-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%AF%8D%E6%B1%87%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">词汇学习</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/03/%E8%8B%B1%E8%AF%AD%E4%BD%BF%E7%94%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+      <meta itemprop="description" content="yychiyu">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hexo">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/12/03/%E8%8B%B1%E8%AF%AD%E4%BD%BF%E7%94%A8/" class="post-title-link" itemprop="url">英语使用</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025-12-03 22:39:12" itemprop="dateCreated datePublished" datetime="2025-12-03T22:39:12+08:00">2025-12-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-12-08 15:43:19" itemprop="dateModified" datetime="2025-12-08T15:43:19+08:00">2025-12-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%8B%B1%E8%AF%AD%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">英语学习</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/03/docker-compose%E7%9A%84%E4%BD%BF%E7%94%A8%E5%92%8C%E6%B3%A8%E6%84%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+      <meta itemprop="description" content="yychiyu">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Hexo">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/12/03/docker-compose%E7%9A%84%E4%BD%BF%E7%94%A8%E5%92%8C%E6%B3%A8%E6%84%8F/" class="post-title-link" itemprop="url">docker compose的使用和注意</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2025-12-03 11:20:53 / 修改时间：22:38:21" itemprop="dateCreated datePublished" datetime="2025-12-03T11:20:53+08:00">2025-12-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">信息技术</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="docker-compose-down相关命令"><a href="#docker-compose-down相关命令" class="headerlink" title="docker-compose down相关命令"></a>docker-compose down相关命令</h1><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker-compose down # 删除容器、默认网络和服务镜像，不删除卷</span><br><span class="line">docker-compose down -v  #删除卷</span><br><span class="line">docker-compose down --rmi all  #删除镜像</span><br><span class="line">+ --rmi all：删除所有与服务关联的镜像</span><br><span class="line">+ -rmi local : 仅删除本地构建的镜像，不会删除从镜像仓库拉取的镜像</span><br></pre></td></tr></table></figure>
+
+<h1 id="使用场景与注意事项"><a href="#使用场景与注意事项" class="headerlink" title="使用场景与注意事项"></a>使用场景与注意事项</h1><p>开发环境： 使用docker-compose down来完全关闭并重置运行的容器和服务配置，建议不要删除卷，以保留容器中存储的数据</p>
+<p>生产环境： 注意删除数据卷时，可能会导致数据丢失。确保生产环境下已经备份了所有重要数据。</p>
+<p>卷的持久化： </p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -632,96 +1184,8 @@
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/11/29/hello-world/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-      <meta itemprop="description" content="yychiyu">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Hexo">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2025/11/29/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2025-11-29 17:20:39" itemprop="dateCreated datePublished" datetime="2025-11-29T17:20:39+08:00">2025-11-29</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2025-12-08 15:05:14" itemprop="dateModified" datetime="2025-12-08T15:05:14+08:00">2025-12-08</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <a class="extend prev" rel="prev" title="上一页" aria-label="上一页" href="/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
+    <a class="extend prev" rel="prev" title="上一页" aria-label="上一页" href="/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" title="下一页" aria-label="下一页" href="/page/3/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 </div>
@@ -732,7 +1196,7 @@
 
   <div class="copyright">
     &copy; 
-    <span itemprop="copyrightYear">2025</span>
+    <span itemprop="copyrightYear">2026</span>
     <span class="with-love">
       <i class="fa fa-heart"></i>
     </span>
