@@ -1066,7 +1066,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2025-12-09 19:18:34" itemprop="dateModified" datetime="2025-12-09T19:18:34+08:00">2025-12-09</time>
+      <time title="修改时间：2026-01-05 16:11:40" itemprop="dateModified" datetime="2026-01-05T16:11:40+08:00">2026-01-05</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -1195,6 +1195,23 @@
 <figure class="highlight md"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">---</span><br><span class="line">title: 示例文章</span><br><span class="line">date: 2024-12-26</span><br><span class="line">tags: </span><br><span class="line"><span class="bullet">-</span> 示例 </span><br><span class="line"><span class="section">- Hexo</span></span><br><span class="line"><span class="section">---</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>重新生成和部署：</p>
 <p>执行hexo g重新生成静态文件，然后执行hexo s启动服务器查看效果。如果一切正常，&#x2F;tags页面应该能够正常显示标签云。</p>
+<h1 id="Hexo-next-主题添加站内搜索功能"><a href="#Hexo-next-主题添加站内搜索功能" class="headerlink" title="Hexo next 主题添加站内搜索功能"></a>Hexo next 主题添加站内搜索功能</h1><p>根据关键字搜索博文，站内搜索的功能很实用。hexo 开启站内搜索很方便，已经有现成的插件可以使用，也是为了方便自己</p>
+<ol>
+<li>安装插件</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">npm install hexo-generator-search  --save</span><br><span class="line">npm install hexo-generator-searchdb --save</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>配置 hexo 站点主配置文件<code>_config.yml</code>, 在文件末尾添加</li>
+</ol>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">search:</span></span><br><span class="line">  <span class="attr">path:</span> <span class="string">search.xml</span></span><br><span class="line">  <span class="attr">field:</span> <span class="string">post</span></span><br><span class="line">  <span class="attr">format:</span> <span class="string">html</span></span><br><span class="line">  <span class="attr">limit:</span> <span class="number">10000</span></span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>修改 next 主题配置文件<code>_config.yml</code>，启用 <code>local_search</code></li>
+</ol>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Local Search</span></span><br><span class="line"><span class="comment"># Dependencies: https://github.com/next-theme/hexo-generator-searchdb</span></span><br><span class="line"><span class="attr">local_search:</span></span><br><span class="line">  <span class="attr">enable:</span> <span class="literal">true</span></span><br><span class="line">  <span class="comment"># Show top n results per article, show all results by setting to -1</span></span><br><span class="line">  <span class="attr">top_n_per_article:</span> <span class="number">1</span></span><br><span class="line">  <span class="comment"># Unescape html strings to the readable one.</span></span><br><span class="line">  <span class="attr">unescape:</span> <span class="literal">false</span></span><br><span class="line">  <span class="comment"># Preload the search data when the page loads.</span></span><br><span class="line">  <span class="attr">preload:</span> <span class="literal">false</span></span><br></pre></td></tr></table></figure>
+
+<p>将 enable 的 <code>false</code>改为<code>true</code>,这样就开启了站内搜索了。</p>
 
       
     </div>
