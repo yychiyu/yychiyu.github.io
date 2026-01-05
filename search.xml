@@ -1,40 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>EasyImage打造图床</title>
-    <url>/2025/12/26/EasyImage%E6%89%93%E9%80%A0%E5%9B%BE%E5%BA%8A/</url>
-    <content><![CDATA[<h1 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h1><ul>
-<li>飞牛NAS已安装Docker服务</li>
-<li>准备至少2G存储空间</li>
-<li>记录NAS内网IP地址</li>
-</ul>
-<h1 id="开始"><a href="#开始" class="headerlink" title="开始"></a>开始</h1><ol>
-<li>Docker镜像仓库搜索EasyImage</li>
-</ol>
-]]></content>
-      <tags>
-        <tag>nas</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Photon OS</title>
-    <url>/2025/12/02/Photon-OS/</url>
-    <content><![CDATA[<h1 id="下载地址"><a href="#下载地址" class="headerlink" title="下载地址"></a>下载地址</h1><p><a href="https://github.com/vmware/photon/wiki/Downloading-Photon-OS">https://github.com/vmware/photon/wiki/Downloading-Photon-OS</a></p>
-<h1 id="安装教程"><a href="#安装教程" class="headerlink" title="安装教程"></a>安装教程</h1><p><a href="https://www.itgeeker.net/one-minute-build-esxi-8-photon-ova-vm-to-run-docker-one-vm-run-one-docker/">https://www.itgeeker.net/one-minute-build-esxi-8-photon-ova-vm-to-run-docker-one-vm-run-one-docker/</a></p>
-<p>Photon OS连不上SSH的解决办法</p>
-<p>Photon OS默认关闭了Root SSH登陆。<br>编辑sshd_config</p>
-<p>vi &#x2F;etc&#x2F;ssh&#x2F;sshd_config</p>
-<p>systemctl restart sshd</p>
-<h1 id="没有daemon-json文件，手动创建"><a href="#没有daemon-json文件，手动创建" class="headerlink" title="没有daemon.json文件，手动创建"></a>没有daemon.json文件，手动创建</h1><p>新建 &#x2F;etc&#x2F;docker&#x2F;daemon.json文件</p>
-<figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;registry-mirrors&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;https://docker.1ms.run&quot;</span><span class="punctuation">,</span></span><br><span class="line">  					   <span class="string">&quot;https://docker.1panel.live&quot;</span></span><br><span class="line">  <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>重启<br>systemctl restart docker</p>
-<p>测试<br>docker pull hello-world</p>
-]]></content>
-      <tags>
-        <tag>linux</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>MBR和GUID分区表选择指南</title>
     <url>/2025/12/04/MBR%E5%92%8CGUID%E5%88%86%E5%8C%BA%E8%A1%A8%E9%80%89%E6%8B%A9%E6%8C%87%E5%8D%97/</url>
     <content><![CDATA[<p>当前的引导模式分UEFI和Legacy两种，分区表的选择与引导模式相关<br>UEFI对应的分区就是GUID分区(gpt);Legacy,则对应的分区类型是MBR。</p>
@@ -73,9 +39,38 @@
       </tags>
   </entry>
   <entry>
-    <title>docker compose</title>
-    <url>/2025/12/03/docker-compose/</url>
-    <content><![CDATA[]]></content>
+    <title>EasyImage打造图床</title>
+    <url>/2025/12/26/EasyImage%E6%89%93%E9%80%A0%E5%9B%BE%E5%BA%8A/</url>
+    <content><![CDATA[<h1 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h1><ul>
+<li>飞牛NAS已安装Docker服务</li>
+<li>准备至少2G存储空间</li>
+<li>记录NAS内网IP地址</li>
+</ul>
+<h1 id="开始"><a href="#开始" class="headerlink" title="开始"></a>开始</h1><ol>
+<li>Docker镜像仓库搜索EasyImage</li>
+</ol>
+]]></content>
+      <tags>
+        <tag>nas</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Photon OS</title>
+    <url>/2025/12/02/Photon-OS/</url>
+    <content><![CDATA[<h1 id="下载地址"><a href="#下载地址" class="headerlink" title="下载地址"></a>下载地址</h1><p><a href="https://github.com/vmware/photon/wiki/Downloading-Photon-OS">https://github.com/vmware/photon/wiki/Downloading-Photon-OS</a></p>
+<h1 id="安装教程"><a href="#安装教程" class="headerlink" title="安装教程"></a>安装教程</h1><p><a href="https://www.itgeeker.net/one-minute-build-esxi-8-photon-ova-vm-to-run-docker-one-vm-run-one-docker/">https://www.itgeeker.net/one-minute-build-esxi-8-photon-ova-vm-to-run-docker-one-vm-run-one-docker/</a></p>
+<p>Photon OS连不上SSH的解决办法</p>
+<p>Photon OS默认关闭了Root SSH登陆。<br>编辑sshd_config</p>
+<p>vi &#x2F;etc&#x2F;ssh&#x2F;sshd_config</p>
+<p>systemctl restart sshd</p>
+<h1 id="没有daemon-json文件，手动创建"><a href="#没有daemon-json文件，手动创建" class="headerlink" title="没有daemon.json文件，手动创建"></a>没有daemon.json文件，手动创建</h1><p>新建 &#x2F;etc&#x2F;docker&#x2F;daemon.json文件</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;registry-mirrors&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;https://docker.1ms.run&quot;</span><span class="punctuation">,</span></span><br><span class="line">  					   <span class="string">&quot;https://docker.1panel.live&quot;</span></span><br><span class="line">  <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>重启<br>systemctl restart docker</p>
+<p>测试<br>docker pull hello-world</p>
+]]></content>
+      <tags>
+        <tag>linux</tag>
+      </tags>
   </entry>
   <entry>
     <title>WireGuard</title>
@@ -131,19 +126,9 @@
       </tags>
   </entry>
   <entry>
-    <title>docker修改时区,时间不对</title>
-    <url>/2025/12/17/docker%E4%BF%AE%E6%94%B9%E6%97%B6%E5%8C%BA-%E6%97%B6%E9%97%B4%E4%B8%8D%E5%AF%B9/</url>
-    <content><![CDATA[<h1 id="方法一-进容器修改"><a href="#方法一-进容器修改" class="headerlink" title="方法一 进容器修改"></a>方法一 进容器修改</h1><p>首先确保宿主机时间和时区正确</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">date -R</span><br></pre></td></tr></table></figure>
-<p>确保时区是+0800</p>
-<p>如果docker是运行状态，执行以下代码</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"> //先执行</span><br><span class="line">docker cp /etc/localtime 容器id:/etc/localtime</span><br><span class="line">//再执行(不执行也修改成功了)</span><br><span class="line">docker restart 容器id</span><br></pre></td></tr></table></figure>
-
-<p>在docker中用date -R 测试</p>
-<h1 id="方法二、在docker-compose文件修改"><a href="#方法二、在docker-compose文件修改" class="headerlink" title="方法二、在docker compose文件修改"></a>方法二、在docker compose文件修改</h1>]]></content>
-      <tags>
-        <tag>docker</tag>
-      </tags>
+    <title>docker compose</title>
+    <url>/2025/12/03/docker-compose/</url>
+    <content><![CDATA[]]></content>
   </entry>
   <entry>
     <title>docker compose的使用和注意</title>
@@ -160,6 +145,75 @@
       <tags>
         <tag>linux</tag>
         <tag>docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>docker修改时区,时间不对</title>
+    <url>/2025/12/17/docker%E4%BF%AE%E6%94%B9%E6%97%B6%E5%8C%BA-%E6%97%B6%E9%97%B4%E4%B8%8D%E5%AF%B9/</url>
+    <content><![CDATA[<h1 id="方法一-进容器修改"><a href="#方法一-进容器修改" class="headerlink" title="方法一 进容器修改"></a>方法一 进容器修改</h1><p>首先确保宿主机时间和时区正确</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">date -R</span><br></pre></td></tr></table></figure>
+<p>确保时区是+0800</p>
+<p>如果docker是运行状态，执行以下代码</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"> //先执行</span><br><span class="line">docker cp /etc/localtime 容器id:/etc/localtime</span><br><span class="line">//再执行(不执行也修改成功了)</span><br><span class="line">docker restart 容器id</span><br></pre></td></tr></table></figure>
+
+<p>在docker中用date -R 测试</p>
+<h1 id="方法二、在docker-compose文件修改"><a href="#方法二、在docker-compose文件修改" class="headerlink" title="方法二、在docker compose文件修改"></a>方法二、在docker compose文件修改</h1>]]></content>
+      <tags>
+        <tag>docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2025/11/29/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>fastadmin使用</title>
+    <url>/2026/01/04/fastadmin%E4%BD%BF%E7%94%A8/</url>
+    <content><![CDATA[<h1 id="控制器访问404"><a href="#控制器访问404" class="headerlink" title="控制器访问404"></a>控制器访问404</h1><p>原因：没有配置伪静态</p>
+<p>nginx配置</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">location / &#123;</span><br><span class="line">    index  index.html index.htm index.php;</span><br><span class="line">    #autoindex  on;</span><br><span class="line">    if (!-e $request_filename) &#123;</span><br><span class="line">        rewrite  ^(.*)$  /index.php?s=/$1  last;</span><br><span class="line">        break;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Apache的配置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">RewriteEngine On</span><br><span class="line">RewriteCond %&#123;REQUEST_FILENAME&#125; !-f</span><br><span class="line">RewriteCond %&#123;REQUEST_FILENAME&#125; !-d</span><br><span class="line">RewriteRule ^(.*)$ index.php?/$1 [QSA,PT,L]</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="fastadmin一键生成CRUD时时间格式错误问题"><a href="#fastadmin一键生成CRUD时时间格式错误问题" class="headerlink" title="fastadmin一键生成CRUD时时间格式错误问题"></a>fastadmin一键生成CRUD时时间格式错误问题</h1><p>在一键生成CRUD后，发现在管理端存储数据时自动保存时间提示错误。</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SQLSTATE</span>[<span class="number">22007</span>]: Invalid datetime format: </span><br><span class="line"><span class="number">1292</span> Incorrect datetime <span class="keyword">value</span>: <span class="string">&#x27;1716863698&#x27;</span> <span class="keyword">for</span> <span class="keyword">column</span> <span class="string">&#x27;createtime&#x27;</span> <span class="keyword">at</span> <span class="type">row</span> <span class="number">1</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>找到项目路径下&#x2F;application&#x2F;admin&#x2F;model下的student.php，可以发现设置为Integer类型。具体如下</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// 自动写入时间戳字段</span></span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$autoWriteTimestamp</span> = <span class="string">&#x27;integer&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>解决办法：将integet类型修改成datetime类型，并设置所需要时间格式</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 自动写入时间戳字段</span></span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$autoWriteTimestamp</span> = <span class="string">&#x27;datetime&#x27;</span>;</span><br><span class="line"><span class="comment">// 时间格式</span></span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$dateFormat</span> = <span class="string">&#x27;Y-m-d H:i:s&#x27;</span>;</span><br></pre></td></tr></table></figure>]]></content>
+      <tags>
+        <tag>php</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>mysql常见错误</title>
+    <url>/2025/12/12/mysql%E5%B8%B8%E8%A7%81%E9%94%99%E8%AF%AF/</url>
+    <content><![CDATA[<h1 id="报错信息"><a href="#报错信息" class="headerlink" title="报错信息"></a>报错信息</h1><p>mysql 执行报错，Illegal mix of collations (utf8mb4_unicode_ci,IMPLICIT) and (utf8mb4_general_ci,IMPLICIT) for operation ‘&#x3D;’</p>
+<h1 id="修改表结构的排序"><a href="#修改表结构的排序" class="headerlink" title="修改表结构的排序"></a>修改表结构的排序</h1><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">ALTER TABLE</span> your_table <span class="keyword">CONVERT</span> <span class="keyword">TO</span> <span class="keyword">CHARACTER SET</span> utf8mb4 <span class="keyword">COLLATE</span> utf8mb4_unicode_ci;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h1 id="mysql替换多余字符"><a href="#mysql替换多余字符" class="headerlink" title="mysql替换多余字符"></a>mysql替换多余字符</h1><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">#替换换行</span><br><span class="line"><span class="keyword">UPDATE</span> ssyp</span><br><span class="line"><span class="keyword">SET</span> zjhm <span class="operator">=</span> REPLACE(zjhm, <span class="string">&#x27;\n&#x27;</span>, <span class="string">&#x27;&#x27;</span>);</span><br><span class="line"></span><br><span class="line">#去除空格</span><br><span class="line"><span class="keyword">UPDATE</span> ssyp</span><br><span class="line"><span class="keyword">SET</span> zjhm  <span class="operator">=</span> <span class="built_in">TRIM</span>(zjhm)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+]]></content>
+      <tags>
+        <tag>mysql</tag>
       </tags>
   </entry>
   <entry>
@@ -281,48 +335,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Hello World</title>
-    <url>/2025/11/29/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>fastadmin使用</title>
-    <url>/2026/01/04/fastadmin%E4%BD%BF%E7%94%A8/</url>
-    <content><![CDATA[<h1 id="控制器访问404"><a href="#控制器访问404" class="headerlink" title="控制器访问404"></a>控制器访问404</h1><p>原因：没有配置伪静态</p>
-<p>nginx配置</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">location / &#123;</span><br><span class="line">    index  index.html index.htm index.php;</span><br><span class="line">    #autoindex  on;</span><br><span class="line">    if (!-e $request_filename) &#123;</span><br><span class="line">        rewrite  ^(.*)$  /index.php?s=/$1  last;</span><br><span class="line">        break;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>Apache的配置</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">RewriteEngine On</span><br><span class="line">RewriteCond %&#123;REQUEST_FILENAME&#125; !-f</span><br><span class="line">RewriteCond %&#123;REQUEST_FILENAME&#125; !-d</span><br><span class="line">RewriteRule ^(.*)$ index.php?/$1 [QSA,PT,L]</span><br></pre></td></tr></table></figure>
-
-
-
-<h1 id="fastadmin一键生成CRUD时时间格式错误问题"><a href="#fastadmin一键生成CRUD时时间格式错误问题" class="headerlink" title="fastadmin一键生成CRUD时时间格式错误问题"></a>fastadmin一键生成CRUD时时间格式错误问题</h1><p>在一键生成CRUD后，发现在管理端存储数据时自动保存时间提示错误。</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SQLSTATE</span>[<span class="number">22007</span>]: Invalid datetime format: </span><br><span class="line"><span class="number">1292</span> Incorrect datetime <span class="keyword">value</span>: <span class="string">&#x27;1716863698&#x27;</span> <span class="keyword">for</span> <span class="keyword">column</span> <span class="string">&#x27;createtime&#x27;</span> <span class="keyword">at</span> <span class="type">row</span> <span class="number">1</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>找到项目路径下&#x2F;application&#x2F;admin&#x2F;model下的student.php，可以发现设置为Integer类型。具体如下</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// 自动写入时间戳字段</span></span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$autoWriteTimestamp</span> = <span class="string">&#x27;integer&#x27;</span>;</span><br></pre></td></tr></table></figure>
-
-<p>解决办法：将integet类型修改成datetime类型，并设置所需要时间格式</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 自动写入时间戳字段</span></span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$autoWriteTimestamp</span> = <span class="string">&#x27;datetime&#x27;</span>;</span><br><span class="line"><span class="comment">// 时间格式</span></span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$dateFormat</span> = <span class="string">&#x27;Y-m-d H:i:s&#x27;</span>;</span><br></pre></td></tr></table></figure>]]></content>
-      <tags>
-        <tag>php</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>ubuntu扩展磁盘空间</title>
     <url>/2026/01/04/ubuntu%E6%89%A9%E5%B1%95%E7%A3%81%E7%9B%98%E7%A9%BA%E9%97%B4/</url>
     <content><![CDATA[<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>查看空间，发现&#x2F;dev&#x2F;vda3已分配100G,逻辑卷ubuntu–lv只用了50G，说明卷组VG还有可用空间</p>
@@ -338,76 +350,6 @@
 ]]></content>
       <tags>
         <tag>linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>mysql常见错误</title>
-    <url>/2025/12/12/mysql%E5%B8%B8%E8%A7%81%E9%94%99%E8%AF%AF/</url>
-    <content><![CDATA[<h1 id="报错信息"><a href="#报错信息" class="headerlink" title="报错信息"></a>报错信息</h1><p>mysql 执行报错，Illegal mix of collations (utf8mb4_unicode_ci,IMPLICIT) and (utf8mb4_general_ci,IMPLICIT) for operation ‘&#x3D;’</p>
-<h1 id="修改表结构的排序"><a href="#修改表结构的排序" class="headerlink" title="修改表结构的排序"></a>修改表结构的排序</h1><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">ALTER TABLE</span> your_table <span class="keyword">CONVERT</span> <span class="keyword">TO</span> <span class="keyword">CHARACTER SET</span> utf8mb4 <span class="keyword">COLLATE</span> utf8mb4_unicode_ci;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h1 id="mysql替换多余字符"><a href="#mysql替换多余字符" class="headerlink" title="mysql替换多余字符"></a>mysql替换多余字符</h1><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">#替换换行</span><br><span class="line"><span class="keyword">UPDATE</span> ssyp</span><br><span class="line"><span class="keyword">SET</span> zjhm <span class="operator">=</span> REPLACE(zjhm, <span class="string">&#x27;\n&#x27;</span>, <span class="string">&#x27;&#x27;</span>);</span><br><span class="line"></span><br><span class="line">#去除空格</span><br><span class="line"><span class="keyword">UPDATE</span> ssyp</span><br><span class="line"><span class="keyword">SET</span> zjhm  <span class="operator">=</span> <span class="built_in">TRIM</span>(zjhm)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-]]></content>
-      <tags>
-        <tag>mysql</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>使用uv管理python虚拟环境</title>
-    <url>/2025/12/08/%E4%BD%BF%E7%94%A8uv%E7%AE%A1%E7%90%86python%E8%99%9A%E6%8B%9F%E7%8E%AF%E5%A2%83/</url>
-    <content><![CDATA[<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>官网：<a href="https://docs.astral.sh/uv/">https://docs.astral.sh/uv/</a><br>使用uv来管理虚拟环境，相比pip有至少10倍的性能提升<br>功能</p>
-<ul>
-<li>管理python版本</li>
-<li>管理第三方库的版本</li>
-<li>拥有全局第三方库的缓存</li>
-<li>安装uv不需要python环境</li>
-<li>多平台支持</li>
-</ul>
-<h1 id="安装uv"><a href="#安装uv" class="headerlink" title="安装uv"></a>安装uv</h1><p>linux</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">curl -LsSf https://astral.sh/uv/install.sh | sh</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">或者wget（效果一样）</span></span><br><span class="line">wget -qO- https://astral.sh/uv/install.sh | sh</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>windows </p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">powershell -ExecutionPolicy ByPass -c &quot;irm https://astral.sh/uv/install.ps1 | iex&quot;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>mac安装后必须把$HOME&#x2F;.local&#x2F;bin这个路径加到环境变量PATH里面才可以正常使用uv工具，设置之后，使用uv –version 确认安装成功</p>
-<p>2.1. 卸载uv<br>卸载uv之前，先执行如下命令删除所有本地缓存文件<br>uv cache clean<br>rm -r “$(uv python dir)”<br>rm -r “$(uv tool dir)”</p>
-<h1 id="mac-linux"><a href="#mac-linux" class="headerlink" title="mac&#x2F;linux"></a>mac&#x2F;linux</h1><p>rm ~&#x2F;.local&#x2F;bin&#x2F;uv ~&#x2F;.local&#x2F;bin&#x2F;uvx</p>
-<h1 id="windows"><a href="#windows" class="headerlink" title="windows"></a>windows</h1><p>rm $HOME.local\bin\uv.exe<br>rm $HOME.local\bin\uvx.exe</p>
-<h1 id="基本使用"><a href="#基本使用" class="headerlink" title="基本使用"></a>基本使用</h1><p>管理python版本</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">uv python list</span><br></pre></td></tr></table></figure>
-<p>安装其他版本python</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">uv python install 3.12</span><br></pre></td></tr></table></figure>
-<p>寻找路径<br>uv python find 3.10</p>
-<p>选用python版本<br>uv python pin 版本号</p>
-<p>这个命令会在指定目录下创建一个.python-version文件，内容如下 </p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">❯ uv python pin 3.10                                    </span><br><span class="line">Pinned `.python-version` to `3.10`</span><br><span class="line"></span><br><span class="line">❯ cat .python-version  </span><br><span class="line">3.10</span><br></pre></td></tr></table></figure>
-
-<p>创建虚拟环境</p>
-<p>第一种方式，<br>先创建好项目目录，设置python版本并初始化虚拟环境</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">uv python pin 3.10</span><br><span class="line">uv init</span><br></pre></td></tr></table></figure>
-
-<p>执行了uv init之后，会在当前目录下创建几个文件，同时也会在当前目录下执行git init创建出一个新的git仓库来</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">~/data/code/python/test_code                                                          </span><br><span class="line">❯ uv python pin 3.13</span><br><span class="line">Pinned `.python-version` to `3.13`</span><br><span class="line">~/data/code/python/test_code                                                                                   </span><br><span class="line">❯ uv init           </span><br><span class="line">Initialized project `test-code`</span><br><span class="line">~/data/code/python/test_code main ?6                                                                                          </span><br><span class="line">❯ ls</span><br><span class="line">README.md      main.py        pyproject.toml</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>方式二<br>在init之后添加一个项目名,会自动创建项目文件夹</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">uv init 项目名</span><br></pre></td></tr></table></figure>
-<p>如果需要指定特定的python版本，建议用第一种方式来创建项目，否则还需要手动修改pyproject.toml配置文件需要的python版本</p>
-<p>添加依赖</p>
-<p>比如依赖库</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">uv add requests</span><br><span class="line">uv add requests==版本号</span><br></pre></td></tr></table></figure>
-
-<p>执行了这个命令后，会在当前目录下创建.venv虚拟环境目录（在vscode里面可以选择这个目录作为虚拟环境，否则代码解析会有问题），并添加我们要的依赖项，同时会新增一个uv.lock文件，用于存放依赖项版本相关的信息。pyproject.toml文件中的dependencies字段也会包含需要的依赖项。</p>
-<p>运行程序</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">uv run 程序文件名[命令行参数]</span><br></pre></td></tr></table></figure>
-
-
-
-
-
-
-]]></content>
-      <tags>
-        <tag>python</tag>
       </tags>
   </entry>
   <entry>
@@ -481,9 +423,62 @@
       </tags>
   </entry>
   <entry>
-    <title>单词组合能力</title>
-    <url>/2025/12/18/%E5%8D%95%E8%AF%8D%E7%BB%84%E5%90%88%E8%83%BD%E5%8A%9B/</url>
-    <content><![CDATA[]]></content>
+    <title>使用uv管理python虚拟环境</title>
+    <url>/2025/12/08/%E4%BD%BF%E7%94%A8uv%E7%AE%A1%E7%90%86python%E8%99%9A%E6%8B%9F%E7%8E%AF%E5%A2%83/</url>
+    <content><![CDATA[<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>官网：<a href="https://docs.astral.sh/uv/">https://docs.astral.sh/uv/</a><br>使用uv来管理虚拟环境，相比pip有至少10倍的性能提升<br>功能</p>
+<ul>
+<li>管理python版本</li>
+<li>管理第三方库的版本</li>
+<li>拥有全局第三方库的缓存</li>
+<li>安装uv不需要python环境</li>
+<li>多平台支持</li>
+</ul>
+<h1 id="安装uv"><a href="#安装uv" class="headerlink" title="安装uv"></a>安装uv</h1><p>linux</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">curl -LsSf https://astral.sh/uv/install.sh | sh</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">或者wget（效果一样）</span></span><br><span class="line">wget -qO- https://astral.sh/uv/install.sh | sh</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>windows </p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">powershell -ExecutionPolicy ByPass -c &quot;irm https://astral.sh/uv/install.ps1 | iex&quot;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>mac安装后必须把$HOME&#x2F;.local&#x2F;bin这个路径加到环境变量PATH里面才可以正常使用uv工具，设置之后，使用uv –version 确认安装成功</p>
+<p>2.1. 卸载uv<br>卸载uv之前，先执行如下命令删除所有本地缓存文件<br>uv cache clean<br>rm -r “$(uv python dir)”<br>rm -r “$(uv tool dir)”</p>
+<h1 id="mac-linux"><a href="#mac-linux" class="headerlink" title="mac&#x2F;linux"></a>mac&#x2F;linux</h1><p>rm ~&#x2F;.local&#x2F;bin&#x2F;uv ~&#x2F;.local&#x2F;bin&#x2F;uvx</p>
+<h1 id="windows"><a href="#windows" class="headerlink" title="windows"></a>windows</h1><p>rm $HOME.local\bin\uv.exe<br>rm $HOME.local\bin\uvx.exe</p>
+<h1 id="基本使用"><a href="#基本使用" class="headerlink" title="基本使用"></a>基本使用</h1><p>管理python版本</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">uv python list</span><br></pre></td></tr></table></figure>
+<p>安装其他版本python</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">uv python install 3.12</span><br></pre></td></tr></table></figure>
+<p>寻找路径<br>uv python find 3.10</p>
+<p>选用python版本<br>uv python pin 版本号</p>
+<p>这个命令会在指定目录下创建一个.python-version文件，内容如下 </p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">❯ uv python pin 3.10                                    </span><br><span class="line">Pinned `.python-version` to `3.10`</span><br><span class="line"></span><br><span class="line">❯ cat .python-version  </span><br><span class="line">3.10</span><br></pre></td></tr></table></figure>
+
+<p>创建虚拟环境</p>
+<p>第一种方式，<br>先创建好项目目录，设置python版本并初始化虚拟环境</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">uv python pin 3.10</span><br><span class="line">uv init</span><br></pre></td></tr></table></figure>
+
+<p>执行了uv init之后，会在当前目录下创建几个文件，同时也会在当前目录下执行git init创建出一个新的git仓库来</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">~/data/code/python/test_code                                                          </span><br><span class="line">❯ uv python pin 3.13</span><br><span class="line">Pinned `.python-version` to `3.13`</span><br><span class="line">~/data/code/python/test_code                                                                                   </span><br><span class="line">❯ uv init           </span><br><span class="line">Initialized project `test-code`</span><br><span class="line">~/data/code/python/test_code main ?6                                                                                          </span><br><span class="line">❯ ls</span><br><span class="line">README.md      main.py        pyproject.toml</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>方式二<br>在init之后添加一个项目名,会自动创建项目文件夹</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">uv init 项目名</span><br></pre></td></tr></table></figure>
+<p>如果需要指定特定的python版本，建议用第一种方式来创建项目，否则还需要手动修改pyproject.toml配置文件需要的python版本</p>
+<p>添加依赖</p>
+<p>比如依赖库</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">uv add requests</span><br><span class="line">uv add requests==版本号</span><br></pre></td></tr></table></figure>
+
+<p>执行了这个命令后，会在当前目录下创建.venv虚拟环境目录（在vscode里面可以选择这个目录作为虚拟环境，否则代码解析会有问题），并添加我们要的依赖项，同时会新增一个uv.lock文件，用于存放依赖项版本相关的信息。pyproject.toml文件中的dependencies字段也会包含需要的依赖项。</p>
+<p>运行程序</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">uv run 程序文件名[命令行参数]</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+]]></content>
+      <tags>
+        <tag>python</tag>
+      </tags>
   </entry>
   <entry>
     <title>安装paddle OCR</title>
@@ -500,32 +495,9 @@
       </tags>
   </entry>
   <entry>
-    <title>英语使用</title>
-    <url>/2025/12/03/%E8%8B%B1%E8%AF%AD%E4%BD%BF%E7%94%A8/</url>
+    <title>单词组合能力</title>
+    <url>/2025/12/18/%E5%8D%95%E8%AF%8D%E7%BB%84%E5%90%88%E8%83%BD%E5%8A%9B/</url>
     <content><![CDATA[]]></content>
-      <categories>
-        <category>英语学习</category>
-      </categories>
-      <tags>
-        <tag>English</tag>
-        <tag>hello</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>物理机虚拟化迁移到vmware</title>
-    <url>/2025/12/10/%E7%89%A9%E7%90%86%E6%9C%BA%E8%99%9A%E6%8B%9F%E5%8C%96%E8%BF%81%E7%A7%BB%E5%88%B0vmware/</url>
-    <content><![CDATA[<h1 id="在DiskGenius中打开VMware虚拟机界面"><a href="#在DiskGenius中打开VMware虚拟机界面" class="headerlink" title="在DiskGenius中打开VMware虚拟机界面"></a>在DiskGenius中打开VMware虚拟机界面</h1><h1 id="步骤2：创建虚拟磁盘与VMware虚拟机"><a href="#步骤2：创建虚拟磁盘与VMware虚拟机" class="headerlink" title="步骤2：创建虚拟磁盘与VMware虚拟机"></a>步骤2：创建虚拟磁盘与VMware虚拟机</h1>]]></content>
-      <tags>
-        <tag>linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>词汇学习</title>
-    <url>/2025/12/03/%E8%AF%8D%E6%B1%87%E5%AD%A6%E4%B9%A0/</url>
-    <content><![CDATA[]]></content>
-      <categories>
-        <category>词汇学习</category>
-      </categories>
   </entry>
   <entry>
     <title>若依架构拆解</title>
@@ -587,5 +559,33 @@
 <li>数据权限 ： 权限大看到的数据更多</li>
 </ul>
 ]]></content>
+  </entry>
+  <entry>
+    <title>物理机虚拟化迁移到vmware</title>
+    <url>/2025/12/10/%E7%89%A9%E7%90%86%E6%9C%BA%E8%99%9A%E6%8B%9F%E5%8C%96%E8%BF%81%E7%A7%BB%E5%88%B0vmware/</url>
+    <content><![CDATA[<h1 id="在DiskGenius中打开VMware虚拟机界面"><a href="#在DiskGenius中打开VMware虚拟机界面" class="headerlink" title="在DiskGenius中打开VMware虚拟机界面"></a>在DiskGenius中打开VMware虚拟机界面</h1><h1 id="步骤2：创建虚拟磁盘与VMware虚拟机"><a href="#步骤2：创建虚拟磁盘与VMware虚拟机" class="headerlink" title="步骤2：创建虚拟磁盘与VMware虚拟机"></a>步骤2：创建虚拟磁盘与VMware虚拟机</h1>]]></content>
+      <tags>
+        <tag>linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>英语使用</title>
+    <url>/2025/12/03/%E8%8B%B1%E8%AF%AD%E4%BD%BF%E7%94%A8/</url>
+    <content><![CDATA[]]></content>
+      <categories>
+        <category>英语学习</category>
+      </categories>
+      <tags>
+        <tag>English</tag>
+        <tag>hello</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>词汇学习</title>
+    <url>/2025/12/03/%E8%AF%8D%E6%B1%87%E5%AD%A6%E4%B9%A0/</url>
+    <content><![CDATA[]]></content>
+      <categories>
+        <category>词汇学习</category>
+      </categories>
   </entry>
 </search>
