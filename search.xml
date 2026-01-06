@@ -1,6 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>EasyImage打造图床</title>
+    <url>/2025/12/26/EasyImage%E6%89%93%E9%80%A0%E5%9B%BE%E5%BA%8A/</url>
+    <content><![CDATA[<h1 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h1><ul>
+<li>飞牛NAS已安装Docker服务</li>
+<li>准备至少2G存储空间</li>
+<li>记录NAS内网IP地址</li>
+</ul>
+<h1 id="开始"><a href="#开始" class="headerlink" title="开始"></a>开始</h1><ol>
+<li>Docker镜像仓库搜索EasyImage</li>
+</ol>
+]]></content>
+      <tags>
+        <tag>nas</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WireGuard</title>
+    <url>/2025/12/02/WireGuard/</url>
+    <content><![CDATA[<h1 id="背景痛点"><a href="#背景痛点" class="headerlink" title="背景痛点"></a>背景痛点</h1><p>构建虚拟专用网络传统的解决方案可能涉及复杂的端口转发、动态 DNS 或安全性较差的 PPTP&#x2F;L2TP VPN。<br>现代化的 WireGuard 以其简洁、高效和安全著称，成为了构建虚拟专用网络的优秀选择。<br>但如果你的家庭网络没有公网 IP，或者公网 IP 是动态变化的，直接从外部访问 WireGuard 服务端就变得困难。这时，内网穿透工具 frp 就派上了用场。frp 可以将内网服务安全地暴露到公网服务器上，从而打通访问的最后一道屏障。<br>本教程将引导你结合 WireGuard（通过易于使用的 wg-easy 界面）和 frp，实现以下目标：</p>
+<ul>
+<li>在内网的 Linux 服务器上部署 WireGuard 服务。</li>
+<li>利用具有公网 IP 的云服务器和 frp，将 WireGuard 服务端口安全地暴露到公网。</li>
+<li>在外部设备（如 Windows 笔记本）上配置 WireGuard 客户端，实现对内网服务器及其所在局域网资源的访问。</li>
+</ul>
+<h1 id="搭建思路与架构"><a href="#搭建思路与架构" class="headerlink" title="搭建思路与架构"></a>搭建思路与架构</h1><p>核心思路是利用 frp 打破 NAT 限制，将内网的 WireGuard 服务端口映射到公网 VPS 上，外部客户端连接公网 VPS 的映射端口，frp 会将流量安全地转发给内网的 WireGuard 服务器。<br>数据流:<br>WireGuard 客户端 (Windows) -&gt; 公网 (Internet) -&gt; 公网 VPS (frps + 防火墙) -&gt; frp 隧道 -&gt; 内网 Linux (frpc) -&gt;<br>内网 Linux (wg-easy) -&gt; 目标内网设备 (192.168.6.x)</p>
+<h2 id="第一步：在内网-Linux-test-安装并配置-WireGuard-服务端-wg-easy"><a href="#第一步：在内网-Linux-test-安装并配置-WireGuard-服务端-wg-easy" class="headerlink" title="第一步：在内网 Linux (test) 安装并配置 WireGuard 服务端 (wg-easy)"></a>第一步：在内网 Linux (test) 安装并配置 WireGuard 服务端 (wg-easy)</h2><p>wg-easy 是一个提供 Web UI 来管理 WireGuard 配置的 Docker 应用，极大地简化了 WireGuard 的部署和客户端管理。</p>
+<ol>
+<li>检查 Linux 内核版本<br>WireGuard 需要较新的 Linux 内核支持。通常要求 内核版本 &gt;&#x3D; 5.6。</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">uname -r</span><br></pre></td></tr></table></figure>
+<p>如果版本低于 5.6，你需要升级内核。可以参考你的 Linux 发行版官方文档或相关教程进行升。</p>
+<h2 id="第二步：确保-Docker-网络依赖的内核模块已加载"><a href="#第二步：确保-Docker-网络依赖的内核模块已加载" class="headerlink" title="第二步：确保 Docker 网络依赖的内核模块已加载"></a>第二步：确保 Docker 网络依赖的内核模块已加载</h2><p>Docker（尤其是其网络功能）通常依赖 ip_tables 和 iptable_nat 模块。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">lsmod | grep ip_tables</span><br><span class="line">lsmod | grep iptable_nat</span><br></pre></td></tr></table></figure>
+<p>如果这两条命令都有输出，则表示模块已加载。如果没有，需要手动加载。 </p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">modprobe ip_tables &amp;&amp; modprobe iptable_nat</span><br></pre></td></tr></table></figure>
+<p>并配置开机自动加载。</p>
+<h1 id="docker运行"><a href="#docker运行" class="headerlink" title="docker运行"></a>docker运行</h1><p>创建docker-compose.yml</p>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&#x27;3.8&#x27;</span> <span class="comment"># 建议指定版本</span></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="attr">etc_wireguard:</span> <span class="comment"># 持久化存储 WireGuard 配置</span></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">wg-easy:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">ghcr.io/wg-easy/wg-easy:latest</span> <span class="comment"># 使用 latest 或指定稳定版本，如 :14</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">wg-easy</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="comment"># --- 核心配置 ---</span></span><br><span class="line">      <span class="comment"># ！！！重要：这里填写你的 frp 公网服务器的 IP 地址 ！！！</span></span><br><span class="line">      <span class="comment"># 这是客户端配置文件中 Endpoint 的地址</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_HOST=38.47.108.108</span></span><br><span class="line">      <span class="comment"># ！！！重要：wg-easy Web UI 的管理员密码哈希 ！！！</span></span><br><span class="line">      <span class="comment"># 强烈建议修改默认密码 &#x27;foobar123&#x27;</span></span><br><span class="line">      <span class="comment"># 可以使用 `docker run --rm ghcr.io/wg-easy/wg-easy:latest --pw your_strong_password` 生成哈希</span></span><br><span class="line">      <span class="comment"># 或者使用在线 bcrypt 生成器 (注意 rounds=5, 示例为 &#x27;foobar123&#x27; 的哈希)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">PASSWORD_HASH=$2y$05$6n2x0AdkZ5lJ8kHufbXrr.dU.UHMBh04HKYXoPb0w484wN75877Eu</span> <span class="comment"># (需要双 $$ 符号)</span></span><br><span class="line">      <span class="comment"># --- 网络配置 ---</span></span><br><span class="line">      <span class="comment"># WireGuard 服务监听的 UDP 端口 (容器内)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_PORT=51820</span></span><br><span class="line">      <span class="comment"># wg-easy Web UI 监听的 TCP 端口 (容器内)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">PORT=51821</span></span><br><span class="line">      <span class="comment"># VPN 客户端分配的 IP 地址范围 (选择一个未使用的私有网段)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_DEFAULT_ADDRESS=10.8.0.x</span> <span class="comment"># 客户端将获取 10.8.0.2, 10.8.0.3 ...</span></span><br><span class="line">      <span class="comment"># 客户端使用的 DNS 服务器 (可使用公共 DNS 或内网 DNS)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_DEFAULT_DNS=114.114.114.114,</span> <span class="number">8.8</span><span class="number">.8</span><span class="number">.8</span></span><br><span class="line">      <span class="comment"># ！！！重要：客户端允许访问的 IP 范围 ！！！</span></span><br><span class="line">      <span class="comment"># 决定了哪些流量会通过 VPN 隧道</span></span><br><span class="line">      <span class="comment"># 10.8.0.0/24: 允许客户端之间互相访问 (如果需要)</span></span><br><span class="line">      <span class="comment"># 192.168.6.0/24: 允许客户端访问 test 服务器所在的局域网</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_ALLOWED_IPS=10.8.0.0/24,</span> <span class="number">192.168</span><span class="number">.6</span><span class="number">.0</span><span class="string">/24</span></span><br><span class="line">      <span class="comment"># --- 可选配置 ---</span></span><br><span class="line">      <span class="comment"># 保持连接，防止 NAT 超时断开 (单位: 秒)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_PERSISTENT_KEEPALIVE=25</span></span><br><span class="line">      <span class="comment"># Web UI 语言 (支持 en, chs 등)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">LANG=chs</span></span><br><span class="line">      <span class="comment"># 启用/禁用 Web UI 中的流量统计图表 (true/false)</span></span><br><span class="line">      <span class="comment"># - UI_TRAFFIC_STATS=true</span></span><br><span class="line">      <span class="comment"># 在 Web UI 中允许通过 HTTP 访问，如果前面没有反向代理做HTTPS，则需要设置为 true</span></span><br><span class="line">      <span class="comment"># 生产环境强烈建议配合反向代理使用 HTTPS</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">INSECURE=true</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="comment"># 将 WireGuard 配置持久化到宿主机</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">etc_wireguard:/etc/wireguard</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="comment"># 将宿主机的端口映射到容器端口</span></span><br><span class="line">      <span class="comment"># 格式: &quot;宿主机端口:容器端口/协议&quot;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;51820:51820/udp&quot;</span> <span class="comment"># WireGuard 数据端口 (与 WG_PORT 一致)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;51821:51821/tcp&quot;</span> <span class="comment"># wg-easy Web UI 端口 (与 PORT 一致)</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">unless-stopped</span></span><br><span class="line">    <span class="attr">cap_add:</span></span><br><span class="line">      <span class="comment"># 赋予容器必要的网络管理权限</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">NET_ADMIN</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">SYS_MODULE</span></span><br><span class="line">    <span class="attr">sysctls:</span></span><br><span class="line">      <span class="comment"># 启用 IP 转发，允许 VPN 客户端通过此服务器访问其他网络</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">net.ipv4.ip_forward=1</span></span><br><span class="line">      <span class="comment"># 确保 WireGuard 的网络标记正常工作</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">net.ipv4.conf.all.src_valid_mark=1</span></span><br><span class="line">      <span class="comment"># - net.ipv6.conf.all.forwarding=1 # 如果需要 IPv6 支持，取消注释</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="启动服务"><a href="#启动服务" class="headerlink" title="启动服务"></a>启动服务</h1><p>在docker-compose.yml文件所在的目录下执行</p>
+<p>docker-compose up -d</p>
+<h1 id="查看日志"><a href="#查看日志" class="headerlink" title="查看日志"></a>查看日志</h1><p>docker logs -f wg-easy</p>
+<h1 id="安全性"><a href="#安全性" class="headerlink" title="安全性"></a>安全性</h1><ul>
+<li>防火墙: 公网VPS配置防火墙规则，仅开放必要端口</li>
+<li>frpToken : 使用复杂度高的</li>
+<li>wg-easy密码： 使用强密码，Nginx反向代理，配置HTTPS</li>
+<li>AllowedIPs: 最小权限原则，仅允许访问必要的网络范围</li>
+<li>软件更新：及时更新WireGuard、frp、Docker以及操作系统</li>
+</ul>
+<h1 id="故障排查"><a href="#故障排查" class="headerlink" title="故障排查"></a>故障排查</h1><ol>
+<li>检查WireGuard客户端日志</li>
+<li>检查wg-easy容器日志</li>
+<li>检查frpc日志</li>
+<li>检查frps日志</li>
+<li>检查公网VPS防火墙,确认端口放行</li>
+<li>检查内网服务器防火墙，注意net.ipv4.ip_forward&#x3D;1 是否生效</li>
+<li>网络连通性测试</li>
+</ol>
+<ul>
+<li>test服务器上ping公网ip</li>
+<li>test服务器上telnet公网端口号</li>
+<li>从外部网络telnet 公网ip 51821, UDP 端口测试麻烦，可用nc -vzu 公网ip 51820尝试</li>
+</ul>
+]]></content>
+      <tags>
+        <tag>linux</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>MBR和GUID分区表选择指南</title>
     <url>/2025/12/04/MBR%E5%92%8CGUID%E5%88%86%E5%8C%BA%E8%A1%A8%E9%80%89%E6%8B%A9%E6%8C%87%E5%8D%97/</url>
     <content><![CDATA[<p>当前的引导模式分UEFI和Legacy两种，分区表的选择与引导模式相关<br>UEFI对应的分区就是GUID分区(gpt);Legacy,则对应的分区类型是MBR。</p>
@@ -57,80 +126,6 @@
       </tags>
   </entry>
   <entry>
-    <title>docker compose</title>
-    <url>/2025/12/03/docker-compose/</url>
-    <content><![CDATA[]]></content>
-  </entry>
-  <entry>
-    <title>WireGuard</title>
-    <url>/2025/12/02/WireGuard/</url>
-    <content><![CDATA[<h1 id="背景痛点"><a href="#背景痛点" class="headerlink" title="背景痛点"></a>背景痛点</h1><p>构建虚拟专用网络传统的解决方案可能涉及复杂的端口转发、动态 DNS 或安全性较差的 PPTP&#x2F;L2TP VPN。<br>现代化的 WireGuard 以其简洁、高效和安全著称，成为了构建虚拟专用网络的优秀选择。<br>但如果你的家庭网络没有公网 IP，或者公网 IP 是动态变化的，直接从外部访问 WireGuard 服务端就变得困难。这时，内网穿透工具 frp 就派上了用场。frp 可以将内网服务安全地暴露到公网服务器上，从而打通访问的最后一道屏障。<br>本教程将引导你结合 WireGuard（通过易于使用的 wg-easy 界面）和 frp，实现以下目标：</p>
-<ul>
-<li>在内网的 Linux 服务器上部署 WireGuard 服务。</li>
-<li>利用具有公网 IP 的云服务器和 frp，将 WireGuard 服务端口安全地暴露到公网。</li>
-<li>在外部设备（如 Windows 笔记本）上配置 WireGuard 客户端，实现对内网服务器及其所在局域网资源的访问。</li>
-</ul>
-<h1 id="搭建思路与架构"><a href="#搭建思路与架构" class="headerlink" title="搭建思路与架构"></a>搭建思路与架构</h1><p>核心思路是利用 frp 打破 NAT 限制，将内网的 WireGuard 服务端口映射到公网 VPS 上，外部客户端连接公网 VPS 的映射端口，frp 会将流量安全地转发给内网的 WireGuard 服务器。<br>数据流:<br>WireGuard 客户端 (Windows) -&gt; 公网 (Internet) -&gt; 公网 VPS (frps + 防火墙) -&gt; frp 隧道 -&gt; 内网 Linux (frpc) -&gt;<br>内网 Linux (wg-easy) -&gt; 目标内网设备 (192.168.6.x)</p>
-<h2 id="第一步：在内网-Linux-test-安装并配置-WireGuard-服务端-wg-easy"><a href="#第一步：在内网-Linux-test-安装并配置-WireGuard-服务端-wg-easy" class="headerlink" title="第一步：在内网 Linux (test) 安装并配置 WireGuard 服务端 (wg-easy)"></a>第一步：在内网 Linux (test) 安装并配置 WireGuard 服务端 (wg-easy)</h2><p>wg-easy 是一个提供 Web UI 来管理 WireGuard 配置的 Docker 应用，极大地简化了 WireGuard 的部署和客户端管理。</p>
-<ol>
-<li>检查 Linux 内核版本<br>WireGuard 需要较新的 Linux 内核支持。通常要求 内核版本 &gt;&#x3D; 5.6。</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">uname -r</span><br></pre></td></tr></table></figure>
-<p>如果版本低于 5.6，你需要升级内核。可以参考你的 Linux 发行版官方文档或相关教程进行升。</p>
-<h2 id="第二步：确保-Docker-网络依赖的内核模块已加载"><a href="#第二步：确保-Docker-网络依赖的内核模块已加载" class="headerlink" title="第二步：确保 Docker 网络依赖的内核模块已加载"></a>第二步：确保 Docker 网络依赖的内核模块已加载</h2><p>Docker（尤其是其网络功能）通常依赖 ip_tables 和 iptable_nat 模块。</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">lsmod | grep ip_tables</span><br><span class="line">lsmod | grep iptable_nat</span><br></pre></td></tr></table></figure>
-<p>如果这两条命令都有输出，则表示模块已加载。如果没有，需要手动加载。 </p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">modprobe ip_tables &amp;&amp; modprobe iptable_nat</span><br></pre></td></tr></table></figure>
-<p>并配置开机自动加载。</p>
-<h1 id="docker运行"><a href="#docker运行" class="headerlink" title="docker运行"></a>docker运行</h1><p>创建docker-compose.yml</p>
-<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&#x27;3.8&#x27;</span> <span class="comment"># 建议指定版本</span></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="attr">etc_wireguard:</span> <span class="comment"># 持久化存储 WireGuard 配置</span></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">wg-easy:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">ghcr.io/wg-easy/wg-easy:latest</span> <span class="comment"># 使用 latest 或指定稳定版本，如 :14</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">wg-easy</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="comment"># --- 核心配置 ---</span></span><br><span class="line">      <span class="comment"># ！！！重要：这里填写你的 frp 公网服务器的 IP 地址 ！！！</span></span><br><span class="line">      <span class="comment"># 这是客户端配置文件中 Endpoint 的地址</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_HOST=38.47.108.108</span></span><br><span class="line">      <span class="comment"># ！！！重要：wg-easy Web UI 的管理员密码哈希 ！！！</span></span><br><span class="line">      <span class="comment"># 强烈建议修改默认密码 &#x27;foobar123&#x27;</span></span><br><span class="line">      <span class="comment"># 可以使用 `docker run --rm ghcr.io/wg-easy/wg-easy:latest --pw your_strong_password` 生成哈希</span></span><br><span class="line">      <span class="comment"># 或者使用在线 bcrypt 生成器 (注意 rounds=5, 示例为 &#x27;foobar123&#x27; 的哈希)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">PASSWORD_HASH=$2y$05$6n2x0AdkZ5lJ8kHufbXrr.dU.UHMBh04HKYXoPb0w484wN75877Eu</span> <span class="comment"># (需要双 $$ 符号)</span></span><br><span class="line">      <span class="comment"># --- 网络配置 ---</span></span><br><span class="line">      <span class="comment"># WireGuard 服务监听的 UDP 端口 (容器内)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_PORT=51820</span></span><br><span class="line">      <span class="comment"># wg-easy Web UI 监听的 TCP 端口 (容器内)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">PORT=51821</span></span><br><span class="line">      <span class="comment"># VPN 客户端分配的 IP 地址范围 (选择一个未使用的私有网段)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_DEFAULT_ADDRESS=10.8.0.x</span> <span class="comment"># 客户端将获取 10.8.0.2, 10.8.0.3 ...</span></span><br><span class="line">      <span class="comment"># 客户端使用的 DNS 服务器 (可使用公共 DNS 或内网 DNS)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_DEFAULT_DNS=114.114.114.114,</span> <span class="number">8.8</span><span class="number">.8</span><span class="number">.8</span></span><br><span class="line">      <span class="comment"># ！！！重要：客户端允许访问的 IP 范围 ！！！</span></span><br><span class="line">      <span class="comment"># 决定了哪些流量会通过 VPN 隧道</span></span><br><span class="line">      <span class="comment"># 10.8.0.0/24: 允许客户端之间互相访问 (如果需要)</span></span><br><span class="line">      <span class="comment"># 192.168.6.0/24: 允许客户端访问 test 服务器所在的局域网</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_ALLOWED_IPS=10.8.0.0/24,</span> <span class="number">192.168</span><span class="number">.6</span><span class="number">.0</span><span class="string">/24</span></span><br><span class="line">      <span class="comment"># --- 可选配置 ---</span></span><br><span class="line">      <span class="comment"># 保持连接，防止 NAT 超时断开 (单位: 秒)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_PERSISTENT_KEEPALIVE=25</span></span><br><span class="line">      <span class="comment"># Web UI 语言 (支持 en, chs 등)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">LANG=chs</span></span><br><span class="line">      <span class="comment"># 启用/禁用 Web UI 中的流量统计图表 (true/false)</span></span><br><span class="line">      <span class="comment"># - UI_TRAFFIC_STATS=true</span></span><br><span class="line">      <span class="comment"># 在 Web UI 中允许通过 HTTP 访问，如果前面没有反向代理做HTTPS，则需要设置为 true</span></span><br><span class="line">      <span class="comment"># 生产环境强烈建议配合反向代理使用 HTTPS</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">INSECURE=true</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="comment"># 将 WireGuard 配置持久化到宿主机</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">etc_wireguard:/etc/wireguard</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="comment"># 将宿主机的端口映射到容器端口</span></span><br><span class="line">      <span class="comment"># 格式: &quot;宿主机端口:容器端口/协议&quot;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;51820:51820/udp&quot;</span> <span class="comment"># WireGuard 数据端口 (与 WG_PORT 一致)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;51821:51821/tcp&quot;</span> <span class="comment"># wg-easy Web UI 端口 (与 PORT 一致)</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">unless-stopped</span></span><br><span class="line">    <span class="attr">cap_add:</span></span><br><span class="line">      <span class="comment"># 赋予容器必要的网络管理权限</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">NET_ADMIN</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">SYS_MODULE</span></span><br><span class="line">    <span class="attr">sysctls:</span></span><br><span class="line">      <span class="comment"># 启用 IP 转发，允许 VPN 客户端通过此服务器访问其他网络</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">net.ipv4.ip_forward=1</span></span><br><span class="line">      <span class="comment"># 确保 WireGuard 的网络标记正常工作</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">net.ipv4.conf.all.src_valid_mark=1</span></span><br><span class="line">      <span class="comment"># - net.ipv6.conf.all.forwarding=1 # 如果需要 IPv6 支持，取消注释</span></span><br></pre></td></tr></table></figure>
-
-<h1 id="启动服务"><a href="#启动服务" class="headerlink" title="启动服务"></a>启动服务</h1><p>在docker-compose.yml文件所在的目录下执行</p>
-<p>docker-compose up -d</p>
-<h1 id="查看日志"><a href="#查看日志" class="headerlink" title="查看日志"></a>查看日志</h1><p>docker logs -f wg-easy</p>
-<h1 id="安全性"><a href="#安全性" class="headerlink" title="安全性"></a>安全性</h1><ul>
-<li>防火墙: 公网VPS配置防火墙规则，仅开放必要端口</li>
-<li>frpToken : 使用复杂度高的</li>
-<li>wg-easy密码： 使用强密码，Nginx反向代理，配置HTTPS</li>
-<li>AllowedIPs: 最小权限原则，仅允许访问必要的网络范围</li>
-<li>软件更新：及时更新WireGuard、frp、Docker以及操作系统</li>
-</ul>
-<h1 id="故障排查"><a href="#故障排查" class="headerlink" title="故障排查"></a>故障排查</h1><ol>
-<li>检查WireGuard客户端日志</li>
-<li>检查wg-easy容器日志</li>
-<li>检查frpc日志</li>
-<li>检查frps日志</li>
-<li>检查公网VPS防火墙,确认端口放行</li>
-<li>检查内网服务器防火墙，注意net.ipv4.ip_forward&#x3D;1 是否生效</li>
-<li>网络连通性测试</li>
-</ol>
-<ul>
-<li>test服务器上ping公网ip</li>
-<li>test服务器上telnet公网端口号</li>
-<li>从外部网络telnet 公网ip 51821, UDP 端口测试麻烦，可用nc -vzu 公网ip 51820尝试</li>
-</ul>
-]]></content>
-      <tags>
-        <tag>linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>EasyImage打造图床</title>
-    <url>/2025/12/26/EasyImage%E6%89%93%E9%80%A0%E5%9B%BE%E5%BA%8A/</url>
-    <content><![CDATA[<h1 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h1><ul>
-<li>飞牛NAS已安装Docker服务</li>
-<li>准备至少2G存储空间</li>
-<li>记录NAS内网IP地址</li>
-</ul>
-<h1 id="开始"><a href="#开始" class="headerlink" title="开始"></a>开始</h1><ol>
-<li>Docker镜像仓库搜索EasyImage</li>
-</ol>
-]]></content>
-      <tags>
-        <tag>nas</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>docker compose的使用和注意</title>
     <url>/2025/12/03/docker-compose%E7%9A%84%E4%BD%BF%E7%94%A8%E5%92%8C%E6%B3%A8%E6%84%8F/</url>
     <content><![CDATA[<h1 id="docker-compose-down相关命令"><a href="#docker-compose-down相关命令" class="headerlink" title="docker-compose down相关命令"></a>docker-compose down相关命令</h1><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">docker-compose down # 删除容器、默认网络和服务镜像，不删除卷</span><br><span class="line">docker-compose down -v  #删除卷</span><br><span class="line">docker-compose down --rmi all  #删除镜像</span><br><span class="line">+ --rmi all：删除所有与服务关联的镜像</span><br><span class="line">+ -rmi local : 仅删除本地构建的镜像，不会删除从镜像仓库拉取的镜像</span><br></pre></td></tr></table></figure>
@@ -148,6 +143,29 @@
       </tags>
   </entry>
   <entry>
+    <title>Hello World</title>
+    <url>/2025/11/29/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>docker compose</title>
+    <url>/2025/12/03/docker-compose/</url>
+    <content><![CDATA[]]></content>
+  </entry>
+  <entry>
     <title>docker修改时区,时间不对</title>
     <url>/2025/12/17/docker%E4%BF%AE%E6%94%B9%E6%97%B6%E5%8C%BA-%E6%97%B6%E9%97%B4%E4%B8%8D%E5%AF%B9/</url>
     <content><![CDATA[<h1 id="方法一-进容器修改"><a href="#方法一-进容器修改" class="headerlink" title="方法一 进容器修改"></a>方法一 进容器修改</h1><p>首先确保宿主机时间和时区正确</p>
@@ -160,6 +178,30 @@
 <h1 id="方法二、在docker-compose文件修改"><a href="#方法二、在docker-compose文件修改" class="headerlink" title="方法二、在docker compose文件修改"></a>方法二、在docker compose文件修改</h1>]]></content>
       <tags>
         <tag>docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>fastadmin使用</title>
+    <url>/2026/01/04/fastadmin%E4%BD%BF%E7%94%A8/</url>
+    <content><![CDATA[<h1 id="控制器访问404"><a href="#控制器访问404" class="headerlink" title="控制器访问404"></a>控制器访问404</h1><p>原因：没有配置伪静态</p>
+<p>nginx配置</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">location / &#123;</span><br><span class="line">    index  index.html index.htm index.php;</span><br><span class="line">    #autoindex  on;</span><br><span class="line">    if (!-e $request_filename) &#123;</span><br><span class="line">        rewrite  ^(.*)$  /index.php?s=/$1  last;</span><br><span class="line">        break;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Apache的配置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">RewriteEngine On</span><br><span class="line">RewriteCond %&#123;REQUEST_FILENAME&#125; !-f</span><br><span class="line">RewriteCond %&#123;REQUEST_FILENAME&#125; !-d</span><br><span class="line">RewriteRule ^(.*)$ index.php?/$1 [QSA,PT,L]</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="fastadmin一键生成CRUD时时间格式错误问题"><a href="#fastadmin一键生成CRUD时时间格式错误问题" class="headerlink" title="fastadmin一键生成CRUD时时间格式错误问题"></a>fastadmin一键生成CRUD时时间格式错误问题</h1><p>在一键生成CRUD后，发现在管理端存储数据时自动保存时间提示错误。</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SQLSTATE</span>[<span class="number">22007</span>]: Invalid datetime format: </span><br><span class="line"><span class="number">1292</span> Incorrect datetime <span class="keyword">value</span>: <span class="string">&#x27;1716863698&#x27;</span> <span class="keyword">for</span> <span class="keyword">column</span> <span class="string">&#x27;createtime&#x27;</span> <span class="keyword">at</span> <span class="type">row</span> <span class="number">1</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>找到项目路径下&#x2F;application&#x2F;admin&#x2F;model下的student.php，可以发现设置为Integer类型。具体如下</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// 自动写入时间戳字段</span></span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$autoWriteTimestamp</span> = <span class="string">&#x27;integer&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>解决办法：将integet类型修改成datetime类型，并设置所需要时间格式</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 自动写入时间戳字段</span></span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$autoWriteTimestamp</span> = <span class="string">&#x27;datetime&#x27;</span>;</span><br><span class="line"><span class="comment">// 时间格式</span></span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$dateFormat</span> = <span class="string">&#x27;Y-m-d H:i:s&#x27;</span>;</span><br></pre></td></tr></table></figure>]]></content>
+      <tags>
+        <tag>php</tag>
       </tags>
   </entry>
   <entry>
@@ -298,46 +340,26 @@
       </tags>
   </entry>
   <entry>
-    <title>fastadmin使用</title>
-    <url>/2026/01/04/fastadmin%E4%BD%BF%E7%94%A8/</url>
-    <content><![CDATA[<h1 id="控制器访问404"><a href="#控制器访问404" class="headerlink" title="控制器访问404"></a>控制器访问404</h1><p>原因：没有配置伪静态</p>
-<p>nginx配置</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">location / &#123;</span><br><span class="line">    index  index.html index.htm index.php;</span><br><span class="line">    #autoindex  on;</span><br><span class="line">    if (!-e $request_filename) &#123;</span><br><span class="line">        rewrite  ^(.*)$  /index.php?s=/$1  last;</span><br><span class="line">        break;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>Apache的配置</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">RewriteEngine On</span><br><span class="line">RewriteCond %&#123;REQUEST_FILENAME&#125; !-f</span><br><span class="line">RewriteCond %&#123;REQUEST_FILENAME&#125; !-d</span><br><span class="line">RewriteRule ^(.*)$ index.php?/$1 [QSA,PT,L]</span><br></pre></td></tr></table></figure>
-
-
-
-<h1 id="fastadmin一键生成CRUD时时间格式错误问题"><a href="#fastadmin一键生成CRUD时时间格式错误问题" class="headerlink" title="fastadmin一键生成CRUD时时间格式错误问题"></a>fastadmin一键生成CRUD时时间格式错误问题</h1><p>在一键生成CRUD后，发现在管理端存储数据时自动保存时间提示错误。</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SQLSTATE</span>[<span class="number">22007</span>]: Invalid datetime format: </span><br><span class="line"><span class="number">1292</span> Incorrect datetime <span class="keyword">value</span>: <span class="string">&#x27;1716863698&#x27;</span> <span class="keyword">for</span> <span class="keyword">column</span> <span class="string">&#x27;createtime&#x27;</span> <span class="keyword">at</span> <span class="type">row</span> <span class="number">1</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>找到项目路径下&#x2F;application&#x2F;admin&#x2F;model下的student.php，可以发现设置为Integer类型。具体如下</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// 自动写入时间戳字段</span></span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$autoWriteTimestamp</span> = <span class="string">&#x27;integer&#x27;</span>;</span><br></pre></td></tr></table></figure>
-
-<p>解决办法：将integet类型修改成datetime类型，并设置所需要时间格式</p>
-<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 自动写入时间戳字段</span></span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$autoWriteTimestamp</span> = <span class="string">&#x27;datetime&#x27;</span>;</span><br><span class="line"><span class="comment">// 时间格式</span></span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$dateFormat</span> = <span class="string">&#x27;Y-m-d H:i:s&#x27;</span>;</span><br></pre></td></tr></table></figure>]]></content>
-      <tags>
-        <tag>php</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2025/11/29/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+    <title>win7和Ubuntu双系统</title>
+    <url>/2025/12/06/win7%E5%92%8CUbuntu%E5%8F%8C%E7%B3%BB%E7%BB%9F/</url>
+    <content><![CDATA[<h1 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h1><p>1.ventoy启动盘<br>2. Ubuntu镜像<br>3. EasyBCD2.1.2.exe,装好Ubuntu后添加开机启动项</p>
+<h1 id="分出一个空磁盘给Ubuntu"><a href="#分出一个空磁盘给Ubuntu" class="headerlink" title="分出一个空磁盘给Ubuntu"></a>分出一个空磁盘给Ubuntu</h1><p>计算机磁盘管理</p>
+<ul>
+<li>如果是个空盘，直接右键删除卷，颜色变绿，表示可用空间</li>
+<li>如果没有空盘,选择剩余空间较大的，右键压缩卷，选择压缩大小，分出的盘可作为Ubuntu的系统盘<br>也可以进PE，用DiskGenius工具分配空间</li>
+</ul>
+<h1 id="安装Ubuntu系统"><a href="#安装Ubuntu系统" class="headerlink" title="安装Ubuntu系统"></a>安装Ubuntu系统</h1><p>使用Ventoy安装Ubuntu系统，此处省略</p>
+<h1 id="使用EasyBCD添加开机引导项"><a href="#使用EasyBCD添加开机引导项" class="headerlink" title="使用EasyBCD添加开机引导项"></a>使用EasyBCD添加开机引导项</h1><ol>
+<li>Add New Entry</li>
+<li>Operating Systems选择Linux&#x2F;BSD</li>
+<li>NeoSmartLinux</li>
+<li>Device选择Linux 190M  &#x2F;boot的那个盘</li>
+<li>Add Entry启动项就装上了</li>
+</ol>
 ]]></content>
+      <tags>
+        <tag>装机</tag>
+      </tags>
   </entry>
   <entry>
     <title>mysql常见错误</title>
@@ -364,31 +386,20 @@
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">ext4文件系统</span></span><br><span class="line">sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv</span><br></pre></td></tr></table></figure>
 
 <h1 id="验证结果"><a href="#验证结果" class="headerlink" title="验证结果"></a>验证结果</h1><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">df -h </span><br></pre></td></tr></table></figure>
+
+
+<h1 id="未分配空间怎么添加到LVM"><a href="#未分配空间怎么添加到LVM" class="headerlink" title="未分配空间怎么添加到LVM"></a>未分配空间怎么添加到LVM</h1><ol>
+<li>创建新的分区</li>
+<li>把分区创建为物理卷PV  pvcreate &#x2F;dev&#x2F;sda3</li>
+<li>vgs查看</li>
+<li>vgextend ubuntu-lv &#x2F;dev&#x2F;sda3</li>
+<li>lvextend -l +100%FREE &#x2F;dev&#x2F;mapper&#x2F;centos-root</li>
+<li>扩展文件系统 xfs_growfs或resize2fs</li>
+</ol>
+<p>加设备-&gt;做PV-&gt;扩VG-&gt;扩LV-&gt;生长文件系统</p>
 ]]></content>
       <tags>
         <tag>linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>win7和Ubuntu双系统</title>
-    <url>/2025/12/06/win7%E5%92%8CUbuntu%E5%8F%8C%E7%B3%BB%E7%BB%9F/</url>
-    <content><![CDATA[<h1 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h1><p>1.ventoy启动盘<br>2. Ubuntu镜像<br>3. EasyBCD2.1.2.exe,装好Ubuntu后添加开机启动项</p>
-<h1 id="分出一个空磁盘给Ubuntu"><a href="#分出一个空磁盘给Ubuntu" class="headerlink" title="分出一个空磁盘给Ubuntu"></a>分出一个空磁盘给Ubuntu</h1><p>计算机磁盘管理</p>
-<ul>
-<li>如果是个空盘，直接右键删除卷，颜色变绿，表示可用空间</li>
-<li>如果没有空盘,选择剩余空间较大的，右键压缩卷，选择压缩大小，分出的盘可作为Ubuntu的系统盘<br>也可以进PE，用DiskGenius工具分配空间</li>
-</ul>
-<h1 id="安装Ubuntu系统"><a href="#安装Ubuntu系统" class="headerlink" title="安装Ubuntu系统"></a>安装Ubuntu系统</h1><p>使用Ventoy安装Ubuntu系统，此处省略</p>
-<h1 id="使用EasyBCD添加开机引导项"><a href="#使用EasyBCD添加开机引导项" class="headerlink" title="使用EasyBCD添加开机引导项"></a>使用EasyBCD添加开机引导项</h1><ol>
-<li>Add New Entry</li>
-<li>Operating Systems选择Linux&#x2F;BSD</li>
-<li>NeoSmartLinux</li>
-<li>Device选择Linux 190M  &#x2F;boot的那个盘</li>
-<li>Add Entry启动项就装上了</li>
-</ol>
-]]></content>
-      <tags>
-        <tag>装机</tag>
       </tags>
   </entry>
   <entry>
@@ -437,6 +448,33 @@
       </categories>
       <tags>
         <tag>linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>单词组合能力</title>
+    <url>/2025/12/18/%E5%8D%95%E8%AF%8D%E7%BB%84%E5%90%88%E8%83%BD%E5%8A%9B/</url>
+    <content><![CDATA[]]></content>
+  </entry>
+  <entry>
+    <title>物理机虚拟化迁移到vmware</title>
+    <url>/2025/12/10/%E7%89%A9%E7%90%86%E6%9C%BA%E8%99%9A%E6%8B%9F%E5%8C%96%E8%BF%81%E7%A7%BB%E5%88%B0vmware/</url>
+    <content><![CDATA[<h1 id="在DiskGenius中打开VMware虚拟机界面"><a href="#在DiskGenius中打开VMware虚拟机界面" class="headerlink" title="在DiskGenius中打开VMware虚拟机界面"></a>在DiskGenius中打开VMware虚拟机界面</h1><h1 id="步骤2：创建虚拟磁盘与VMware虚拟机"><a href="#步骤2：创建虚拟磁盘与VMware虚拟机" class="headerlink" title="步骤2：创建虚拟磁盘与VMware虚拟机"></a>步骤2：创建虚拟磁盘与VMware虚拟机</h1>]]></content>
+      <tags>
+        <tag>linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>安装paddle OCR</title>
+    <url>/2025/12/27/%E5%AE%89%E8%A3%85paddle-OCR/</url>
+    <content><![CDATA[<h1 id="飞桨快速安装"><a href="#飞桨快速安装" class="headerlink" title="飞桨快速安装"></a>飞桨快速安装</h1><p><a href="https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/develop/install/pip/linux-pip.html">开始使用_飞桨-源于产业实践的开源深度学习平台</a></p>
+<h1 id="升级cuda-11-8"><a href="#升级cuda-11-8" class="headerlink" title="升级cuda 11.8"></a>升级cuda 11.8</h1><p><a href="https://developer.nvidia.com/cuda-11-8-0-download-archive?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=22.04&target_type=runfile_local">CUDA Toolkit 11.8 Downloads | NVIDIA Developer</a></p>
+<p><img src="http://img.leeabc.cn/i/2025/12/27/h91db0.jpg" alt="ubuntu  cuda11.8"></p>
+<p>[安装CUDA11.8 【Ubuntu 20.04]_cuda11.8安装-CSDN博客](<a href="https://blog.csdn.net/2201_75663877/article/details/145207222">https://blog.csdn.net/2201_75663877/article/details/145207222</a>)</p>
+<p>注意事项  cuda的多版本管理</p>
+<h1 id="安装paddle-OCR"><a href="#安装paddle-OCR" class="headerlink" title="安装paddle OCR"></a>安装paddle OCR</h1><p><a href="https://github.com/PaddlePaddle/PaddleOCR">PaddlePaddle&#x2F;PaddleOCR: Turn any PDF or image document into structured data for your AI. A powerful, lightweight OCR toolkit that bridges the gap between images&#x2F;PDFs and LLMs. Supports 100+ languages.</a></p>
+]]></content>
+      <tags>
+        <tag>python</tag>
       </tags>
   </entry>
   <entry>
@@ -492,25 +530,6 @@
 
 
 
-]]></content>
-      <tags>
-        <tag>python</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>单词组合能力</title>
-    <url>/2025/12/18/%E5%8D%95%E8%AF%8D%E7%BB%84%E5%90%88%E8%83%BD%E5%8A%9B/</url>
-    <content><![CDATA[]]></content>
-  </entry>
-  <entry>
-    <title>安装paddle OCR</title>
-    <url>/2025/12/27/%E5%AE%89%E8%A3%85paddle-OCR/</url>
-    <content><![CDATA[<h1 id="飞桨快速安装"><a href="#飞桨快速安装" class="headerlink" title="飞桨快速安装"></a>飞桨快速安装</h1><p><a href="https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/develop/install/pip/linux-pip.html">开始使用_飞桨-源于产业实践的开源深度学习平台</a></p>
-<h1 id="升级cuda-11-8"><a href="#升级cuda-11-8" class="headerlink" title="升级cuda 11.8"></a>升级cuda 11.8</h1><p><a href="https://developer.nvidia.com/cuda-11-8-0-download-archive?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=22.04&target_type=runfile_local">CUDA Toolkit 11.8 Downloads | NVIDIA Developer</a></p>
-<p><img src="http://img.leeabc.cn/i/2025/12/27/h91db0.jpg" alt="ubuntu  cuda11.8"></p>
-<p>[安装CUDA11.8 【Ubuntu 20.04]_cuda11.8安装-CSDN博客](<a href="https://blog.csdn.net/2201_75663877/article/details/145207222">https://blog.csdn.net/2201_75663877/article/details/145207222</a>)</p>
-<p>注意事项  cuda的多版本管理</p>
-<h1 id="安装paddle-OCR"><a href="#安装paddle-OCR" class="headerlink" title="安装paddle OCR"></a>安装paddle OCR</h1><p><a href="https://github.com/PaddlePaddle/PaddleOCR">PaddlePaddle&#x2F;PaddleOCR: Turn any PDF or image document into structured data for your AI. A powerful, lightweight OCR toolkit that bridges the gap between images&#x2F;PDFs and LLMs. Supports 100+ languages.</a></p>
 ]]></content>
       <tags>
         <tag>python</tag>
@@ -578,11 +597,15 @@
 ]]></content>
   </entry>
   <entry>
-    <title>物理机虚拟化迁移到vmware</title>
-    <url>/2025/12/10/%E7%89%A9%E7%90%86%E6%9C%BA%E8%99%9A%E6%8B%9F%E5%8C%96%E8%BF%81%E7%A7%BB%E5%88%B0vmware/</url>
-    <content><![CDATA[<h1 id="在DiskGenius中打开VMware虚拟机界面"><a href="#在DiskGenius中打开VMware虚拟机界面" class="headerlink" title="在DiskGenius中打开VMware虚拟机界面"></a>在DiskGenius中打开VMware虚拟机界面</h1><h1 id="步骤2：创建虚拟磁盘与VMware虚拟机"><a href="#步骤2：创建虚拟磁盘与VMware虚拟机" class="headerlink" title="步骤2：创建虚拟磁盘与VMware虚拟机"></a>步骤2：创建虚拟磁盘与VMware虚拟机</h1>]]></content>
+    <title>英语使用</title>
+    <url>/2025/12/03/%E8%8B%B1%E8%AF%AD%E4%BD%BF%E7%94%A8/</url>
+    <content><![CDATA[]]></content>
+      <categories>
+        <category>英语学习</category>
+      </categories>
       <tags>
-        <tag>linux</tag>
+        <tag>English</tag>
+        <tag>hello</tag>
       </tags>
   </entry>
   <entry>
@@ -594,15 +617,44 @@
       </categories>
   </entry>
   <entry>
-    <title>英语使用</title>
-    <url>/2025/12/03/%E8%8B%B1%E8%AF%AD%E4%BD%BF%E7%94%A8/</url>
-    <content><![CDATA[]]></content>
-      <categories>
-        <category>英语学习</category>
-      </categories>
+    <title>飞牛nas安装使用</title>
+    <url>/2026/01/06/%E9%A3%9E%E7%89%9Bnas%E5%AE%89%E8%A3%85%E4%BD%BF%E7%94%A8/</url>
+    <content><![CDATA[<h1 id="飞牛nas配置息屏不关机"><a href="#飞牛nas配置息屏不关机" class="headerlink" title="飞牛nas配置息屏不关机"></a>飞牛nas配置息屏不关机</h1><p>1.进入ssh</p>
+<p>2.打开root权限</p>
+<p>sudo -i</p>
+<p>3.打开logind.conf编辑页面</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo vim /etc/systemd/logind.conf</span><br></pre></td></tr></table></figure>
+
+<p>找到下面2行信息，</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">HandleLidSwitch=<span class="built_in">suspend</span></span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">HandleLidSwitchExternalPower=<span class="built_in">suspend</span></span></span><br></pre></td></tr></table></figure>
+
+<p>把这2行前面的#删掉，然后将 suspend 改成 ignore，修改后如下：</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">HandleLidSwitch=ignore</span><br><span class="line">HandleLidSwitchExternalPower=ignore</span><br></pre></td></tr></table></figure>
+
+<p>最终效果呈现：</p>
+<p>笔记本合上盖子，屏幕熄灭，主机继续正常运行，</p>
+<p>打开盖子，屏幕正常点亮并显示。</p>
+<hr>
+<p>进阶做法：</p>
+<p>1.开屏自动息屏，修改grub，</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nano /etc/default/grub</span><br></pre></td></tr></table></figure>
+
+<p>找到GRUB_CMDLINE_LINUX_DEFAULT&#x3D;”quiet”，修改内容为10s自动关屏：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">GRUB_CMDLINE_LINUX_DEFAULT=&quot;quiet consoleblank=10&quot;</span><br></pre></td></tr></table></figure>
+
+
+<p>2.新建脚本：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">vim /usr/local/bin/disable-backlight.sh</span><br></pre></td></tr></table></figure>
+<p>修改内容：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">!/bin/bash</span></span><br><span class="line">sleep 5</span><br><span class="line">/usr/bin/setterm -blank 1</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>权限配置：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">chmod +x /usr/local/bin/disable-backlight.sh</span><br><span class="line">@reboot /usr/local/bin/disable-backlight.sh</span><br><span class="line">reboot</span><br></pre></td></tr></table></figure>
+
+
+]]></content>
       <tags>
-        <tag>English</tag>
-        <tag>hello</tag>
+        <tag>nas</tag>
+        <tag>linux</tag>
       </tags>
   </entry>
 </search>
