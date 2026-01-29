@@ -17,57 +17,13 @@
       </tags>
   </entry>
   <entry>
-    <title>WireGuard</title>
-    <url>/2025/12/02/WireGuard/</url>
-    <content><![CDATA[<h1 id="背景痛点"><a href="#背景痛点" class="headerlink" title="背景痛点"></a>背景痛点</h1><p>构建虚拟专用网络传统的解决方案可能涉及复杂的端口转发、动态 DNS 或安全性较差的 PPTP&#x2F;L2TP VPN。<br>现代化的 WireGuard 以其简洁、高效和安全著称，成为了构建虚拟专用网络的优秀选择。<br>但如果你的家庭网络没有公网 IP，或者公网 IP 是动态变化的，直接从外部访问 WireGuard 服务端就变得困难。这时，内网穿透工具 frp 就派上了用场。frp 可以将内网服务安全地暴露到公网服务器上，从而打通访问的最后一道屏障。<br>本教程将引导你结合 WireGuard（通过易于使用的 wg-easy 界面）和 frp，实现以下目标：</p>
-<ul>
-<li>在内网的 Linux 服务器上部署 WireGuard 服务。</li>
-<li>利用具有公网 IP 的云服务器和 frp，将 WireGuard 服务端口安全地暴露到公网。</li>
-<li>在外部设备（如 Windows 笔记本）上配置 WireGuard 客户端，实现对内网服务器及其所在局域网资源的访问。</li>
-</ul>
-<h1 id="搭建思路与架构"><a href="#搭建思路与架构" class="headerlink" title="搭建思路与架构"></a>搭建思路与架构</h1><p>核心思路是利用 frp 打破 NAT 限制，将内网的 WireGuard 服务端口映射到公网 VPS 上，外部客户端连接公网 VPS 的映射端口，frp 会将流量安全地转发给内网的 WireGuard 服务器。<br>数据流:<br>WireGuard 客户端 (Windows) -&gt; 公网 (Internet) -&gt; 公网 VPS (frps + 防火墙) -&gt; frp 隧道 -&gt; 内网 Linux (frpc) -&gt;<br>内网 Linux (wg-easy) -&gt; 目标内网设备 (192.168.6.x)</p>
-<h2 id="第一步：在内网-Linux-test-安装并配置-WireGuard-服务端-wg-easy"><a href="#第一步：在内网-Linux-test-安装并配置-WireGuard-服务端-wg-easy" class="headerlink" title="第一步：在内网 Linux (test) 安装并配置 WireGuard 服务端 (wg-easy)"></a>第一步：在内网 Linux (test) 安装并配置 WireGuard 服务端 (wg-easy)</h2><p>wg-easy 是一个提供 Web UI 来管理 WireGuard 配置的 Docker 应用，极大地简化了 WireGuard 的部署和客户端管理。</p>
-<ol>
-<li>检查 Linux 内核版本<br>WireGuard 需要较新的 Linux 内核支持。通常要求 内核版本 &gt;&#x3D; 5.6。</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">uname -r</span><br></pre></td></tr></table></figure>
-<p>如果版本低于 5.6，你需要升级内核。可以参考你的 Linux 发行版官方文档或相关教程进行升。</p>
-<h2 id="第二步：确保-Docker-网络依赖的内核模块已加载"><a href="#第二步：确保-Docker-网络依赖的内核模块已加载" class="headerlink" title="第二步：确保 Docker 网络依赖的内核模块已加载"></a>第二步：确保 Docker 网络依赖的内核模块已加载</h2><p>Docker（尤其是其网络功能）通常依赖 ip_tables 和 iptable_nat 模块。</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">lsmod | grep ip_tables</span><br><span class="line">lsmod | grep iptable_nat</span><br></pre></td></tr></table></figure>
-<p>如果这两条命令都有输出，则表示模块已加载。如果没有，需要手动加载。 </p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">modprobe ip_tables &amp;&amp; modprobe iptable_nat</span><br></pre></td></tr></table></figure>
-<p>并配置开机自动加载。</p>
-<h1 id="docker运行"><a href="#docker运行" class="headerlink" title="docker运行"></a>docker运行</h1><p>创建docker-compose.yml</p>
-<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&#x27;3.8&#x27;</span> <span class="comment"># 建议指定版本</span></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="attr">etc_wireguard:</span> <span class="comment"># 持久化存储 WireGuard 配置</span></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">wg-easy:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">ghcr.io/wg-easy/wg-easy:latest</span> <span class="comment"># 使用 latest 或指定稳定版本，如 :14</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">wg-easy</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="comment"># --- 核心配置 ---</span></span><br><span class="line">      <span class="comment"># ！！！重要：这里填写你的 frp 公网服务器的 IP 地址 ！！！</span></span><br><span class="line">      <span class="comment"># 这是客户端配置文件中 Endpoint 的地址</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_HOST=38.47.108.108</span></span><br><span class="line">      <span class="comment"># ！！！重要：wg-easy Web UI 的管理员密码哈希 ！！！</span></span><br><span class="line">      <span class="comment"># 强烈建议修改默认密码 &#x27;foobar123&#x27;</span></span><br><span class="line">      <span class="comment"># 可以使用 `docker run --rm ghcr.io/wg-easy/wg-easy:latest --pw your_strong_password` 生成哈希</span></span><br><span class="line">      <span class="comment"># 或者使用在线 bcrypt 生成器 (注意 rounds=5, 示例为 &#x27;foobar123&#x27; 的哈希)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">PASSWORD_HASH=$2y$05$6n2x0AdkZ5lJ8kHufbXrr.dU.UHMBh04HKYXoPb0w484wN75877Eu</span> <span class="comment"># (需要双 $$ 符号)</span></span><br><span class="line">      <span class="comment"># --- 网络配置 ---</span></span><br><span class="line">      <span class="comment"># WireGuard 服务监听的 UDP 端口 (容器内)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_PORT=51820</span></span><br><span class="line">      <span class="comment"># wg-easy Web UI 监听的 TCP 端口 (容器内)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">PORT=51821</span></span><br><span class="line">      <span class="comment"># VPN 客户端分配的 IP 地址范围 (选择一个未使用的私有网段)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_DEFAULT_ADDRESS=10.8.0.x</span> <span class="comment"># 客户端将获取 10.8.0.2, 10.8.0.3 ...</span></span><br><span class="line">      <span class="comment"># 客户端使用的 DNS 服务器 (可使用公共 DNS 或内网 DNS)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_DEFAULT_DNS=114.114.114.114,</span> <span class="number">8.8</span><span class="number">.8</span><span class="number">.8</span></span><br><span class="line">      <span class="comment"># ！！！重要：客户端允许访问的 IP 范围 ！！！</span></span><br><span class="line">      <span class="comment"># 决定了哪些流量会通过 VPN 隧道</span></span><br><span class="line">      <span class="comment"># 10.8.0.0/24: 允许客户端之间互相访问 (如果需要)</span></span><br><span class="line">      <span class="comment"># 192.168.6.0/24: 允许客户端访问 test 服务器所在的局域网</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_ALLOWED_IPS=10.8.0.0/24,</span> <span class="number">192.168</span><span class="number">.6</span><span class="number">.0</span><span class="string">/24</span></span><br><span class="line">      <span class="comment"># --- 可选配置 ---</span></span><br><span class="line">      <span class="comment"># 保持连接，防止 NAT 超时断开 (单位: 秒)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_PERSISTENT_KEEPALIVE=25</span></span><br><span class="line">      <span class="comment"># Web UI 语言 (支持 en, chs 등)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">LANG=chs</span></span><br><span class="line">      <span class="comment"># 启用/禁用 Web UI 中的流量统计图表 (true/false)</span></span><br><span class="line">      <span class="comment"># - UI_TRAFFIC_STATS=true</span></span><br><span class="line">      <span class="comment"># 在 Web UI 中允许通过 HTTP 访问，如果前面没有反向代理做HTTPS，则需要设置为 true</span></span><br><span class="line">      <span class="comment"># 生产环境强烈建议配合反向代理使用 HTTPS</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">INSECURE=true</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="comment"># 将 WireGuard 配置持久化到宿主机</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">etc_wireguard:/etc/wireguard</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="comment"># 将宿主机的端口映射到容器端口</span></span><br><span class="line">      <span class="comment"># 格式: &quot;宿主机端口:容器端口/协议&quot;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;51820:51820/udp&quot;</span> <span class="comment"># WireGuard 数据端口 (与 WG_PORT 一致)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;51821:51821/tcp&quot;</span> <span class="comment"># wg-easy Web UI 端口 (与 PORT 一致)</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">unless-stopped</span></span><br><span class="line">    <span class="attr">cap_add:</span></span><br><span class="line">      <span class="comment"># 赋予容器必要的网络管理权限</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">NET_ADMIN</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">SYS_MODULE</span></span><br><span class="line">    <span class="attr">sysctls:</span></span><br><span class="line">      <span class="comment"># 启用 IP 转发，允许 VPN 客户端通过此服务器访问其他网络</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">net.ipv4.ip_forward=1</span></span><br><span class="line">      <span class="comment"># 确保 WireGuard 的网络标记正常工作</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">net.ipv4.conf.all.src_valid_mark=1</span></span><br><span class="line">      <span class="comment"># - net.ipv6.conf.all.forwarding=1 # 如果需要 IPv6 支持，取消注释</span></span><br></pre></td></tr></table></figure>
-
-<h1 id="启动服务"><a href="#启动服务" class="headerlink" title="启动服务"></a>启动服务</h1><p>在docker-compose.yml文件所在的目录下执行</p>
-<p>docker-compose up -d</p>
-<h1 id="查看日志"><a href="#查看日志" class="headerlink" title="查看日志"></a>查看日志</h1><p>docker logs -f wg-easy</p>
-<h1 id="安全性"><a href="#安全性" class="headerlink" title="安全性"></a>安全性</h1><ul>
-<li>防火墙: 公网VPS配置防火墙规则，仅开放必要端口</li>
-<li>frpToken : 使用复杂度高的</li>
-<li>wg-easy密码： 使用强密码，Nginx反向代理，配置HTTPS</li>
-<li>AllowedIPs: 最小权限原则，仅允许访问必要的网络范围</li>
-<li>软件更新：及时更新WireGuard、frp、Docker以及操作系统</li>
-</ul>
-<h1 id="故障排查"><a href="#故障排查" class="headerlink" title="故障排查"></a>故障排查</h1><ol>
-<li>检查WireGuard客户端日志</li>
-<li>检查wg-easy容器日志</li>
-<li>检查frpc日志</li>
-<li>检查frps日志</li>
-<li>检查公网VPS防火墙,确认端口放行</li>
-<li>检查内网服务器防火墙，注意net.ipv4.ip_forward&#x3D;1 是否生效</li>
-<li>网络连通性测试</li>
-</ol>
-<ul>
-<li>test服务器上ping公网ip</li>
-<li>test服务器上telnet公网端口号</li>
-<li>从外部网络telnet 公网ip 51821, UDP 端口测试麻烦，可用nc -vzu 公网ip 51820尝试</li>
-</ul>
+    <title>FastAdmin命令行使用</title>
+    <url>/2026/01/27/FastAdmin%E5%91%BD%E4%BB%A4%E8%A1%8C%E4%BD%BF%E7%94%A8/</url>
+    <content><![CDATA[<h1 id="FastAdmin代码生成"><a href="#FastAdmin代码生成" class="headerlink" title="FastAdmin代码生成"></a>FastAdmin代码生成</h1><p>数据库有一张商品分类表, merchant_category</p>
+<p>php think crud -t merchant_category -c abc&#x2F;category -u 1</p>
+<h1 id="FastAdmin-用ThinkPHP删除二级目录菜单命令"><a href="#FastAdmin-用ThinkPHP删除二级目录菜单命令" class="headerlink" title="FastAdmin 用ThinkPHP删除二级目录菜单命令"></a>FastAdmin 用ThinkPHP删除二级目录菜单命令</h1><p>&#x2F;&#x2F;fastadmin 生成二级菜单之后进行删除<br>php think crud -t test -c mydir&#x2F;test -d mydir&#x2F;test</p>
+<p>&#x2F;&#x2F;生成merchant_category表的CRUD且所有以image和img结尾的字段都生成图片上传组件<br>php think crud -t merchant_category -c merchantcategory -u 1 –imagefield&#x3D;image –imagefield&#x3D;img</p>
 ]]></content>
-      <tags>
-        <tag>linux</tag>
-      </tags>
   </entry>
   <entry>
     <title>MBR和GUID分区表选择指南</title>
@@ -143,27 +99,57 @@
       </tags>
   </entry>
   <entry>
-    <title>Hello World</title>
-    <url>/2025/11/29/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+    <title>WireGuard</title>
+    <url>/2025/12/02/WireGuard/</url>
+    <content><![CDATA[<h1 id="背景痛点"><a href="#背景痛点" class="headerlink" title="背景痛点"></a>背景痛点</h1><p>构建虚拟专用网络传统的解决方案可能涉及复杂的端口转发、动态 DNS 或安全性较差的 PPTP&#x2F;L2TP VPN。<br>现代化的 WireGuard 以其简洁、高效和安全著称，成为了构建虚拟专用网络的优秀选择。<br>但如果你的家庭网络没有公网 IP，或者公网 IP 是动态变化的，直接从外部访问 WireGuard 服务端就变得困难。这时，内网穿透工具 frp 就派上了用场。frp 可以将内网服务安全地暴露到公网服务器上，从而打通访问的最后一道屏障。<br>本教程将引导你结合 WireGuard（通过易于使用的 wg-easy 界面）和 frp，实现以下目标：</p>
+<ul>
+<li>在内网的 Linux 服务器上部署 WireGuard 服务。</li>
+<li>利用具有公网 IP 的云服务器和 frp，将 WireGuard 服务端口安全地暴露到公网。</li>
+<li>在外部设备（如 Windows 笔记本）上配置 WireGuard 客户端，实现对内网服务器及其所在局域网资源的访问。</li>
+</ul>
+<h1 id="搭建思路与架构"><a href="#搭建思路与架构" class="headerlink" title="搭建思路与架构"></a>搭建思路与架构</h1><p>核心思路是利用 frp 打破 NAT 限制，将内网的 WireGuard 服务端口映射到公网 VPS 上，外部客户端连接公网 VPS 的映射端口，frp 会将流量安全地转发给内网的 WireGuard 服务器。<br>数据流:<br>WireGuard 客户端 (Windows) -&gt; 公网 (Internet) -&gt; 公网 VPS (frps + 防火墙) -&gt; frp 隧道 -&gt; 内网 Linux (frpc) -&gt;<br>内网 Linux (wg-easy) -&gt; 目标内网设备 (192.168.6.x)</p>
+<h2 id="第一步：在内网-Linux-test-安装并配置-WireGuard-服务端-wg-easy"><a href="#第一步：在内网-Linux-test-安装并配置-WireGuard-服务端-wg-easy" class="headerlink" title="第一步：在内网 Linux (test) 安装并配置 WireGuard 服务端 (wg-easy)"></a>第一步：在内网 Linux (test) 安装并配置 WireGuard 服务端 (wg-easy)</h2><p>wg-easy 是一个提供 Web UI 来管理 WireGuard 配置的 Docker 应用，极大地简化了 WireGuard 的部署和客户端管理。</p>
+<ol>
+<li>检查 Linux 内核版本<br>WireGuard 需要较新的 Linux 内核支持。通常要求 内核版本 &gt;&#x3D; 5.6。</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">uname -r</span><br></pre></td></tr></table></figure>
+<p>如果版本低于 5.6，你需要升级内核。可以参考你的 Linux 发行版官方文档或相关教程进行升。</p>
+<h2 id="第二步：确保-Docker-网络依赖的内核模块已加载"><a href="#第二步：确保-Docker-网络依赖的内核模块已加载" class="headerlink" title="第二步：确保 Docker 网络依赖的内核模块已加载"></a>第二步：确保 Docker 网络依赖的内核模块已加载</h2><p>Docker（尤其是其网络功能）通常依赖 ip_tables 和 iptable_nat 模块。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">lsmod | grep ip_tables</span><br><span class="line">lsmod | grep iptable_nat</span><br></pre></td></tr></table></figure>
+<p>如果这两条命令都有输出，则表示模块已加载。如果没有，需要手动加载。 </p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">modprobe ip_tables &amp;&amp; modprobe iptable_nat</span><br></pre></td></tr></table></figure>
+<p>并配置开机自动加载。</p>
+<h1 id="docker运行"><a href="#docker运行" class="headerlink" title="docker运行"></a>docker运行</h1><p>创建docker-compose.yml</p>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&#x27;3.8&#x27;</span> <span class="comment"># 建议指定版本</span></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="attr">etc_wireguard:</span> <span class="comment"># 持久化存储 WireGuard 配置</span></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">wg-easy:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">ghcr.io/wg-easy/wg-easy:latest</span> <span class="comment"># 使用 latest 或指定稳定版本，如 :14</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">wg-easy</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="comment"># --- 核心配置 ---</span></span><br><span class="line">      <span class="comment"># ！！！重要：这里填写你的 frp 公网服务器的 IP 地址 ！！！</span></span><br><span class="line">      <span class="comment"># 这是客户端配置文件中 Endpoint 的地址</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_HOST=38.47.108.108</span></span><br><span class="line">      <span class="comment"># ！！！重要：wg-easy Web UI 的管理员密码哈希 ！！！</span></span><br><span class="line">      <span class="comment"># 强烈建议修改默认密码 &#x27;foobar123&#x27;</span></span><br><span class="line">      <span class="comment"># 可以使用 `docker run --rm ghcr.io/wg-easy/wg-easy:latest --pw your_strong_password` 生成哈希</span></span><br><span class="line">      <span class="comment"># 或者使用在线 bcrypt 生成器 (注意 rounds=5, 示例为 &#x27;foobar123&#x27; 的哈希)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">PASSWORD_HASH=$2y$05$6n2x0AdkZ5lJ8kHufbXrr.dU.UHMBh04HKYXoPb0w484wN75877Eu</span> <span class="comment"># (需要双 $$ 符号)</span></span><br><span class="line">      <span class="comment"># --- 网络配置 ---</span></span><br><span class="line">      <span class="comment"># WireGuard 服务监听的 UDP 端口 (容器内)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_PORT=51820</span></span><br><span class="line">      <span class="comment"># wg-easy Web UI 监听的 TCP 端口 (容器内)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">PORT=51821</span></span><br><span class="line">      <span class="comment"># VPN 客户端分配的 IP 地址范围 (选择一个未使用的私有网段)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_DEFAULT_ADDRESS=10.8.0.x</span> <span class="comment"># 客户端将获取 10.8.0.2, 10.8.0.3 ...</span></span><br><span class="line">      <span class="comment"># 客户端使用的 DNS 服务器 (可使用公共 DNS 或内网 DNS)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_DEFAULT_DNS=114.114.114.114,</span> <span class="number">8.8</span><span class="number">.8</span><span class="number">.8</span></span><br><span class="line">      <span class="comment"># ！！！重要：客户端允许访问的 IP 范围 ！！！</span></span><br><span class="line">      <span class="comment"># 决定了哪些流量会通过 VPN 隧道</span></span><br><span class="line">      <span class="comment"># 10.8.0.0/24: 允许客户端之间互相访问 (如果需要)</span></span><br><span class="line">      <span class="comment"># 192.168.6.0/24: 允许客户端访问 test 服务器所在的局域网</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_ALLOWED_IPS=10.8.0.0/24,</span> <span class="number">192.168</span><span class="number">.6</span><span class="number">.0</span><span class="string">/24</span></span><br><span class="line">      <span class="comment"># --- 可选配置 ---</span></span><br><span class="line">      <span class="comment"># 保持连接，防止 NAT 超时断开 (单位: 秒)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WG_PERSISTENT_KEEPALIVE=25</span></span><br><span class="line">      <span class="comment"># Web UI 语言 (支持 en, chs 등)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">LANG=chs</span></span><br><span class="line">      <span class="comment"># 启用/禁用 Web UI 中的流量统计图表 (true/false)</span></span><br><span class="line">      <span class="comment"># - UI_TRAFFIC_STATS=true</span></span><br><span class="line">      <span class="comment"># 在 Web UI 中允许通过 HTTP 访问，如果前面没有反向代理做HTTPS，则需要设置为 true</span></span><br><span class="line">      <span class="comment"># 生产环境强烈建议配合反向代理使用 HTTPS</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">INSECURE=true</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="comment"># 将 WireGuard 配置持久化到宿主机</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">etc_wireguard:/etc/wireguard</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="comment"># 将宿主机的端口映射到容器端口</span></span><br><span class="line">      <span class="comment"># 格式: &quot;宿主机端口:容器端口/协议&quot;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;51820:51820/udp&quot;</span> <span class="comment"># WireGuard 数据端口 (与 WG_PORT 一致)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;51821:51821/tcp&quot;</span> <span class="comment"># wg-easy Web UI 端口 (与 PORT 一致)</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">unless-stopped</span></span><br><span class="line">    <span class="attr">cap_add:</span></span><br><span class="line">      <span class="comment"># 赋予容器必要的网络管理权限</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">NET_ADMIN</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">SYS_MODULE</span></span><br><span class="line">    <span class="attr">sysctls:</span></span><br><span class="line">      <span class="comment"># 启用 IP 转发，允许 VPN 客户端通过此服务器访问其他网络</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">net.ipv4.ip_forward=1</span></span><br><span class="line">      <span class="comment"># 确保 WireGuard 的网络标记正常工作</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">net.ipv4.conf.all.src_valid_mark=1</span></span><br><span class="line">      <span class="comment"># - net.ipv6.conf.all.forwarding=1 # 如果需要 IPv6 支持，取消注释</span></span><br></pre></td></tr></table></figure>
 
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+<h1 id="启动服务"><a href="#启动服务" class="headerlink" title="启动服务"></a>启动服务</h1><p>在docker-compose.yml文件所在的目录下执行</p>
+<p>docker-compose up -d</p>
+<h1 id="查看日志"><a href="#查看日志" class="headerlink" title="查看日志"></a>查看日志</h1><p>docker logs -f wg-easy</p>
+<h1 id="安全性"><a href="#安全性" class="headerlink" title="安全性"></a>安全性</h1><ul>
+<li>防火墙: 公网VPS配置防火墙规则，仅开放必要端口</li>
+<li>frpToken : 使用复杂度高的</li>
+<li>wg-easy密码： 使用强密码，Nginx反向代理，配置HTTPS</li>
+<li>AllowedIPs: 最小权限原则，仅允许访问必要的网络范围</li>
+<li>软件更新：及时更新WireGuard、frp、Docker以及操作系统</li>
+</ul>
+<h1 id="故障排查"><a href="#故障排查" class="headerlink" title="故障排查"></a>故障排查</h1><ol>
+<li>检查WireGuard客户端日志</li>
+<li>检查wg-easy容器日志</li>
+<li>检查frpc日志</li>
+<li>检查frps日志</li>
+<li>检查公网VPS防火墙,确认端口放行</li>
+<li>检查内网服务器防火墙，注意net.ipv4.ip_forward&#x3D;1 是否生效</li>
+<li>网络连通性测试</li>
+</ol>
+<ul>
+<li>test服务器上ping公网ip</li>
+<li>test服务器上telnet公网端口号</li>
+<li>从外部网络telnet 公网ip 51821, UDP 端口测试麻烦，可用nc -vzu 公网ip 51820尝试</li>
+</ul>
 ]]></content>
-  </entry>
-  <entry>
-    <title>docker compose</title>
-    <url>/2025/12/03/docker-compose/</url>
-    <content><![CDATA[]]></content>
+      <tags>
+        <tag>linux</tag>
+      </tags>
   </entry>
   <entry>
     <title>docker修改时区,时间不对</title>
@@ -179,6 +165,11 @@
       <tags>
         <tag>docker</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>docker compose</title>
+    <url>/2025/12/03/docker-compose/</url>
+    <content><![CDATA[]]></content>
   </entry>
   <entry>
     <title>fastadmin使用</title>
@@ -202,6 +193,74 @@
 <figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 自动写入时间戳字段</span></span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$autoWriteTimestamp</span> = <span class="string">&#x27;datetime&#x27;</span>;</span><br><span class="line"><span class="comment">// 时间格式</span></span><br><span class="line"><span class="keyword">protected</span> <span class="variable">$dateFormat</span> = <span class="string">&#x27;Y-m-d H:i:s&#x27;</span>;</span><br></pre></td></tr></table></figure>]]></content>
       <tags>
         <tag>php</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2025/11/29/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>mysql常见错误</title>
+    <url>/2025/12/12/mysql%E5%B8%B8%E8%A7%81%E9%94%99%E8%AF%AF/</url>
+    <content><![CDATA[<h1 id="报错信息"><a href="#报错信息" class="headerlink" title="报错信息"></a>报错信息</h1><p>mysql 执行报错，Illegal mix of collations (utf8mb4_unicode_ci,IMPLICIT) and (utf8mb4_general_ci,IMPLICIT) for operation ‘&#x3D;’</p>
+<h1 id="修改表结构的排序"><a href="#修改表结构的排序" class="headerlink" title="修改表结构的排序"></a>修改表结构的排序</h1><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">ALTER TABLE</span> your_table <span class="keyword">CONVERT</span> <span class="keyword">TO</span> <span class="keyword">CHARACTER SET</span> utf8mb4 <span class="keyword">COLLATE</span> utf8mb4_unicode_ci;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h1 id="mysql替换多余字符"><a href="#mysql替换多余字符" class="headerlink" title="mysql替换多余字符"></a>mysql替换多余字符</h1><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">#替换换行</span><br><span class="line"><span class="keyword">UPDATE</span> ssyp</span><br><span class="line"><span class="keyword">SET</span> zjhm <span class="operator">=</span> REPLACE(zjhm, <span class="string">&#x27;\n&#x27;</span>, <span class="string">&#x27;&#x27;</span>);</span><br><span class="line"></span><br><span class="line">#去除空格</span><br><span class="line"><span class="keyword">UPDATE</span> ssyp</span><br><span class="line"><span class="keyword">SET</span> zjhm  <span class="operator">=</span> <span class="built_in">TRIM</span>(zjhm)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+]]></content>
+      <tags>
+        <tag>mysql</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>vmware photonOS分配空间未加载</title>
+    <url>/2026/01/27/vmware-photonOS%E5%88%86%E9%85%8D%E7%A9%BA%E9%97%B4%E6%9C%AA%E5%8A%A0%E8%BD%BD/</url>
+    <content><![CDATA[<h1 id="报错信息"><a href="#报错信息" class="headerlink" title="报错信息"></a>报错信息</h1><p>fdisk -l 报错信息如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">GPT PMBR size mismatch (33554431 != 104857599) will be corrected by write. Disk /dev/sda: 50 GiB, 53687091200 bytes, 104857600 sectors Disk model: Virtual disk Units: sectors of 1 * 512 = 512 bytes Sector size (logical/physical): 512 bytes / 512 bytes I/O size (minimum/optimal): 512 bytes / 512 bytes Disklabel type: gpt Disk identifier: 7833ABBE-6584-44B8-AEAD-AF3450599E43 Device     Start      End  Sectors Size Type /dev/sda1   2048    10239     8192   4M BIOS boot /dev/sda2  30720 33554398 33523679  16G Linux filesystem /dev/sda3  10240    30719    20480  10M EFI System Partition table entries are not in disk order.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h1 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h1><h3 id="检查-parted-是否已安装"><a href="#检查-parted-是否已安装" class="headerlink" title="检查 parted 是否已安装"></a>检查 <code>parted</code> 是否已安装</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">sudo tdnf list installed | grep parted</span><br></pre></td></tr></table></figure>
+
+<p><strong>如果未安装</strong>，请运行安装命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">sudo tdnf install parted</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>photon可去掉sudo命令</p>
+<p><strong>请注意：这需要修改分区表，虽然数据通常不会丢失，但操作前强烈建议备份重要数据或拍摄快照。</strong></p>
+<p>使用parted调整分区大小</p>
+<p>进入parted交互模式</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo parted /dev/sda</span><br></pre></td></tr></table></figure>
+
+<p>查看当前分区情况</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">(parted) print</span><br></pre></td></tr></table></figure>
+
+<p>调整分区大小，将&#x2F;dev&#x2F;sda2扩展到100%</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(parted) resizepart 2 100%</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>系统可能会提示“End of the partition is incorrect”之类的警告，输入 <code>Ignore</code> 或 <code>Fix</code>（取决于版本，通常输入 <code>I</code> 或 <code>F</code>）。</li>
+</ul>
+<p>再次输入 <code>print</code> 确认分区的“End”值已经接近磁盘总大小。</p>
+<p>输入 <code>quit</code> 退出。</p>
+<h4 id="第二步：通知内核更新分区表"><a href="#第二步：通知内核更新分区表" class="headerlink" title="第二步：通知内核更新分区表"></a>第二步：通知内核更新分区表</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">sudo partprobe /dev/sda</span><br></pre></td></tr></table></figure>
+
+<h4 id="第三步：扩展文件系统"><a href="#第三步：扩展文件系统" class="headerlink" title="第三步：扩展文件系统"></a>第三步：扩展文件系统</h4><p>分区变大了，但里面的文件系统（XFS 或 ext4）还需要“撑大”自己。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">XFS</span></span><br><span class="line">sudo xfs_growfs /</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">ext4</span></span><br><span class="line">sudo resize2fs /dev/sda2</span><br></pre></td></tr></table></figure>
+
+<h1 id="第四步：验证"><a href="#第四步：验证" class="headerlink" title="第四步：验证"></a>第四步：验证</h1><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">df -h </span><br></pre></td></tr></table></figure>]]></content>
+      <tags>
+        <tag>linux</tag>
       </tags>
   </entry>
   <entry>
@@ -340,144 +399,6 @@
       </tags>
   </entry>
   <entry>
-    <title>win7和Ubuntu双系统</title>
-    <url>/2025/12/06/win7%E5%92%8CUbuntu%E5%8F%8C%E7%B3%BB%E7%BB%9F/</url>
-    <content><![CDATA[<h1 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h1><p>1.ventoy启动盘<br>2. Ubuntu镜像<br>3. EasyBCD2.1.2.exe,装好Ubuntu后添加开机启动项</p>
-<h1 id="分出一个空磁盘给Ubuntu"><a href="#分出一个空磁盘给Ubuntu" class="headerlink" title="分出一个空磁盘给Ubuntu"></a>分出一个空磁盘给Ubuntu</h1><p>计算机磁盘管理</p>
-<ul>
-<li>如果是个空盘，直接右键删除卷，颜色变绿，表示可用空间</li>
-<li>如果没有空盘,选择剩余空间较大的，右键压缩卷，选择压缩大小，分出的盘可作为Ubuntu的系统盘<br>也可以进PE，用DiskGenius工具分配空间</li>
-</ul>
-<h1 id="安装Ubuntu系统"><a href="#安装Ubuntu系统" class="headerlink" title="安装Ubuntu系统"></a>安装Ubuntu系统</h1><p>使用Ventoy安装Ubuntu系统，此处省略</p>
-<h1 id="使用EasyBCD添加开机引导项"><a href="#使用EasyBCD添加开机引导项" class="headerlink" title="使用EasyBCD添加开机引导项"></a>使用EasyBCD添加开机引导项</h1><ol>
-<li>Add New Entry</li>
-<li>Operating Systems选择Linux&#x2F;BSD</li>
-<li>NeoSmartLinux</li>
-<li>Device选择Linux 190M  &#x2F;boot的那个盘</li>
-<li>Add Entry启动项就装上了</li>
-</ol>
-]]></content>
-      <tags>
-        <tag>装机</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>mysql常见错误</title>
-    <url>/2025/12/12/mysql%E5%B8%B8%E8%A7%81%E9%94%99%E8%AF%AF/</url>
-    <content><![CDATA[<h1 id="报错信息"><a href="#报错信息" class="headerlink" title="报错信息"></a>报错信息</h1><p>mysql 执行报错，Illegal mix of collations (utf8mb4_unicode_ci,IMPLICIT) and (utf8mb4_general_ci,IMPLICIT) for operation ‘&#x3D;’</p>
-<h1 id="修改表结构的排序"><a href="#修改表结构的排序" class="headerlink" title="修改表结构的排序"></a>修改表结构的排序</h1><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">ALTER TABLE</span> your_table <span class="keyword">CONVERT</span> <span class="keyword">TO</span> <span class="keyword">CHARACTER SET</span> utf8mb4 <span class="keyword">COLLATE</span> utf8mb4_unicode_ci;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h1 id="mysql替换多余字符"><a href="#mysql替换多余字符" class="headerlink" title="mysql替换多余字符"></a>mysql替换多余字符</h1><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">#替换换行</span><br><span class="line"><span class="keyword">UPDATE</span> ssyp</span><br><span class="line"><span class="keyword">SET</span> zjhm <span class="operator">=</span> REPLACE(zjhm, <span class="string">&#x27;\n&#x27;</span>, <span class="string">&#x27;&#x27;</span>);</span><br><span class="line"></span><br><span class="line">#去除空格</span><br><span class="line"><span class="keyword">UPDATE</span> ssyp</span><br><span class="line"><span class="keyword">SET</span> zjhm  <span class="operator">=</span> <span class="built_in">TRIM</span>(zjhm)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-]]></content>
-      <tags>
-        <tag>mysql</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>ubuntu扩展磁盘空间</title>
-    <url>/2026/01/04/ubuntu%E6%89%A9%E5%B1%95%E7%A3%81%E7%9B%98%E7%A9%BA%E9%97%B4/</url>
-    <content><![CDATA[<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>查看空间，发现&#x2F;dev&#x2F;vda3已分配100G,逻辑卷ubuntu–lv只用了50G，说明卷组VG还有可用空间</p>
-<p>解决不需要调整物理空间，只需要调整卷组的空间</p>
-<h1 id="1-查看卷组的空闲空间"><a href="#1-查看卷组的空闲空间" class="headerlink" title="1.查看卷组的空闲空间"></a>1.查看卷组的空闲空间</h1><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo vgdisplay</span><br></pre></td></tr></table></figure>
-<p>Free PE &#x2F;Size 如果显示类似50 Gib, 说明还有50G卷组未分配</p>
-<h1 id="2-扩展逻辑卷-LV"><a href="#2-扩展逻辑卷-LV" class="headerlink" title="2.扩展逻辑卷(LV)"></a>2.扩展逻辑卷(LV)</h1><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">使用所有剩余的空间”。</span></span><br><span class="line">sudo lvextend -r -l +100%FREE /dev/mapper/ubuntu--vg-ubuntu--lv</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">只增加 10G</span></span><br><span class="line">sudo lvextend -r -l +10G /dev/mapper/ubuntu--vg-ubuntu--lv</span><br></pre></td></tr></table></figure>
-
-<h1 id="调整文件系统（可省略）"><a href="#调整文件系统（可省略）" class="headerlink" title="调整文件系统（可省略）"></a>调整文件系统（可省略）</h1><p>如果<strong>上一步sudo lvextend  加了参数 -r</strong> , 系统会自动检测逻辑卷上的文件系统类型，并在扩容 LV 后，自动调用相应的命令（<code>resize2fs</code> 或 <code>xfs_growfs</code>）来同步扩容文件系统。</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">ext4文件系统</span></span><br><span class="line">sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv</span><br></pre></td></tr></table></figure>
-
-<h1 id="验证结果"><a href="#验证结果" class="headerlink" title="验证结果"></a>验证结果</h1><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">df -h </span><br></pre></td></tr></table></figure>
-
-
-<h1 id="未分配空间怎么添加到LVM"><a href="#未分配空间怎么添加到LVM" class="headerlink" title="未分配空间怎么添加到LVM"></a>未分配空间怎么添加到LVM</h1><ol>
-<li>创建新的分区</li>
-<li>把分区创建为物理卷PV  pvcreate &#x2F;dev&#x2F;sda3</li>
-<li>vgs查看</li>
-<li>vgextend ubuntu-lv &#x2F;dev&#x2F;sda3</li>
-<li>lvextend -l +100%FREE &#x2F;dev&#x2F;mapper&#x2F;centos-root</li>
-<li>扩展文件系统 xfs_growfs或resize2fs</li>
-</ol>
-<p>加设备-&gt;做PV-&gt;扩VG-&gt;扩LV-&gt;生长文件系统</p>
-]]></content>
-      <tags>
-        <tag>linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>wsl安装dify</title>
-    <url>/2025/12/08/wsl%E5%AE%89%E8%A3%85dify/</url>
-    <content><![CDATA[<h1 id="1-下载最新的dify版本"><a href="#1-下载最新的dify版本" class="headerlink" title="1.下载最新的dify版本"></a>1.下载最新的dify版本</h1><p><a href="https://github.com/langgenius/dify">langgenius&#x2F;dify: Production-ready platform for agentic workflow development.</a></p>
-<h1 id="2-启动dify"><a href="#2-启动dify" class="headerlink" title="2.启动dify"></a>2.启动dify</h1><p>将dify-main.zip 上传到wsl ubuntu系统的&#x2F;opt目录下并解压</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cd dify</span><br><span class="line">cd docker</span><br><span class="line">cp .env.example .env</span><br><span class="line">docker compose up -d</span><br></pre></td></tr></table></figure>
-
-<h1 id="3-配置转发"><a href="#3-配置转发" class="headerlink" title="3.配置转发"></a>3.配置转发</h1><p>如果win11的wsl网络模式是mirror模式，以下可跳过</p>
-<p>win10的wsl没有开启镜像模式，配置端口转发</p>
-<figure class="highlight cmd"><table><tr><td class="code"><pre><span class="line">netsh interface portproxy add v4tov4 listenport=<span class="number">5173</span> listenaddress=<span class="number">0</span>.<span class="number">0</span>.<span class="number">0</span>.<span class="number">0</span> connectport=<span class="number">5173</span> connectaddress=<span class="number">172</span>.<span class="number">26</span>.<span class="number">178</span>.<span class="number">31</span></span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>listenport是Windows上的端口，</li>
-<li>listenaddress是Windows上监听此端口的IP地址（通常为0.0.0.0以监听所有IP），</li>
-<li>connectport是WSL中服务的端口，</li>
-<li>connectaddress是WSL中服务的IP地址</li>
-</ul>
-<p>查看端口代理</p>
-<figure class="highlight cmd"><table><tr><td class="code"><pre><span class="line">netsh interface portproxy show all</span><br></pre></td></tr></table></figure>
-
-<p>宿主机给wsl配置代理,访问网络</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">export http_proxy=http://192.168.0.21:7890 &amp;&amp; export https_proxy=http://192.168.0.21:7890</span><br></pre></td></tr></table></figure>
-
-<h1 id="4-启动异常处理"><a href="#4-启动异常处理" class="headerlink" title="4.启动异常处理"></a>4.启动异常处理</h1><p><a href="http://localhost/">http://localhost</a><br>出现异常：<br>dify Setup failed: PermissionDenied (persistent) at write &#x3D;&gt; permission denied Context: service: fs path: privkeys&#x2F;e4c12d52-1c20-4753-a3c0-45ebed0575d6&#x2F;private.pem Source: Permission denied (os error 13)<br>解决办法：<br>chmod 777 dify&#x2F;docker&#x2F;volumes&#x2F;app&#x2F;storage</p>
-<h1 id="在dify-1-8添加ollama模型时，显示模型为空的解决办法"><a href="#在dify-1-8添加ollama模型时，显示模型为空的解决办法" class="headerlink" title="在dify 1.8添加ollama模型时，显示模型为空的解决办法"></a>在dify 1.8添加ollama模型时，显示模型为空的解决办法</h1><p>晚上把dify 升级到1.8版本，发现连接ollama的时候，显示模型，模型不出来，显示模型那里，始终为0个模型，在“添加模型”那里无论如何配置都没办法。</p>
-<p>排查思路</p>
-<ol>
-<li>在浏览器输入ollama，查看ollama正常，模型显示正常，说明ollama没有问题<br>查看docker-compose.yml，发现这个变量是由.env控制的</li>
-</ol>
-<p>在&#x2F;dify&#x2F;docker目录，打开.env文件，看到这个参数如下：</p>
-<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p><a href="https://zhida.zhihu.com/search?content_id=262772041&content_type=Article&match_order=1&q=PLUGIN_PYTHON_ENV_INIT_TIMEOUT&zhida_source=entity">PLUGIN_PYTHON_ENV_INIT_TIMEOUT</a>&#x3D;120</p>
-<p><a href="https://zhida.zhihu.com/search?content_id=262772041&content_type=Article&match_order=1&q=PLUGIN_MAX_EXECUTION_TIMEOUT&zhida_source=entity">PLUGIN_MAX_EXECUTION_TIMEOUT</a>&#x3D;600</p>
-<p><a href="https://zhida.zhihu.com/search?content_id=262772041&content_type=Article&match_order=1&q=PIP_MIRROR_URL&zhida_source=entity">PIP_MIRROR_URL</a>&#x3D;  </p>
-<p>Dify默认配置项的数字太小，改大即可，我修改的数字为：</p>
-<p>PLUGIN_PYTHON_ENV_INIT_TIMEOUT&#x3D;1200<br>PLUGIN_MAX_EXECUTION_TIMEOUT&#x3D;900<br>PIP_MIRROR_URL&#x3D;<a href="https://link.zhihu.com/?target=https://pypi.tuna.tsinghua.edu.cn/simple">https://pypi.tuna.tsinghua.edu.cn/simple</a><br>#PIP_MIRROR_URL&#x3D;  </p>
-<p>并重启dify</p>
-<p>sudo docker-compose down<br>sudo docker-compose up -d</p>
-<p>再次打开dify,模型就出来了：</p>
-]]></content>
-      <categories>
-        <category>信息技术</category>
-      </categories>
-      <tags>
-        <tag>linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>单词组合能力</title>
-    <url>/2025/12/18/%E5%8D%95%E8%AF%8D%E7%BB%84%E5%90%88%E8%83%BD%E5%8A%9B/</url>
-    <content><![CDATA[]]></content>
-  </entry>
-  <entry>
-    <title>物理机虚拟化迁移到vmware</title>
-    <url>/2025/12/10/%E7%89%A9%E7%90%86%E6%9C%BA%E8%99%9A%E6%8B%9F%E5%8C%96%E8%BF%81%E7%A7%BB%E5%88%B0vmware/</url>
-    <content><![CDATA[<h1 id="在DiskGenius中打开VMware虚拟机界面"><a href="#在DiskGenius中打开VMware虚拟机界面" class="headerlink" title="在DiskGenius中打开VMware虚拟机界面"></a>在DiskGenius中打开VMware虚拟机界面</h1><h1 id="步骤2：创建虚拟磁盘与VMware虚拟机"><a href="#步骤2：创建虚拟磁盘与VMware虚拟机" class="headerlink" title="步骤2：创建虚拟磁盘与VMware虚拟机"></a>步骤2：创建虚拟磁盘与VMware虚拟机</h1>]]></content>
-      <tags>
-        <tag>linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>安装paddle OCR</title>
-    <url>/2025/12/27/%E5%AE%89%E8%A3%85paddle-OCR/</url>
-    <content><![CDATA[<h1 id="飞桨快速安装"><a href="#飞桨快速安装" class="headerlink" title="飞桨快速安装"></a>飞桨快速安装</h1><p><a href="https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/develop/install/pip/linux-pip.html">开始使用_飞桨-源于产业实践的开源深度学习平台</a></p>
-<h1 id="升级cuda-11-8"><a href="#升级cuda-11-8" class="headerlink" title="升级cuda 11.8"></a>升级cuda 11.8</h1><p><a href="https://developer.nvidia.com/cuda-11-8-0-download-archive?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=22.04&target_type=runfile_local">CUDA Toolkit 11.8 Downloads | NVIDIA Developer</a></p>
-<p><img src="http://img.leeabc.cn/i/2025/12/27/h91db0.jpg" alt="ubuntu  cuda11.8"></p>
-<p>[安装CUDA11.8 【Ubuntu 20.04]_cuda11.8安装-CSDN博客](<a href="https://blog.csdn.net/2201_75663877/article/details/145207222">https://blog.csdn.net/2201_75663877/article/details/145207222</a>)</p>
-<p>注意事项  cuda的多版本管理</p>
-<h1 id="安装paddle-OCR"><a href="#安装paddle-OCR" class="headerlink" title="安装paddle OCR"></a>安装paddle OCR</h1><p><a href="https://github.com/PaddlePaddle/PaddleOCR">PaddlePaddle&#x2F;PaddleOCR: Turn any PDF or image document into structured data for your AI. A powerful, lightweight OCR toolkit that bridges the gap between images&#x2F;PDFs and LLMs. Supports 100+ languages.</a></p>
-]]></content>
-      <tags>
-        <tag>python</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>使用uv管理python虚拟环境</title>
     <url>/2025/12/08/%E4%BD%BF%E7%94%A8uv%E7%AE%A1%E7%90%86python%E8%99%9A%E6%8B%9F%E7%8E%AF%E5%A2%83/</url>
     <content><![CDATA[<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>官网：<a href="https://docs.astral.sh/uv/">https://docs.astral.sh/uv/</a><br>使用uv来管理虚拟环境，相比pip有至少10倍的性能提升<br>功能</p>
@@ -534,6 +455,131 @@
       <tags>
         <tag>python</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>win7和Ubuntu双系统</title>
+    <url>/2025/12/06/win7%E5%92%8CUbuntu%E5%8F%8C%E7%B3%BB%E7%BB%9F/</url>
+    <content><![CDATA[<h1 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h1><p>1.ventoy启动盘<br>2. Ubuntu镜像<br>3. EasyBCD2.1.2.exe,装好Ubuntu后添加开机启动项</p>
+<h1 id="分出一个空磁盘给Ubuntu"><a href="#分出一个空磁盘给Ubuntu" class="headerlink" title="分出一个空磁盘给Ubuntu"></a>分出一个空磁盘给Ubuntu</h1><p>计算机磁盘管理</p>
+<ul>
+<li>如果是个空盘，直接右键删除卷，颜色变绿，表示可用空间</li>
+<li>如果没有空盘,选择剩余空间较大的，右键压缩卷，选择压缩大小，分出的盘可作为Ubuntu的系统盘<br>也可以进PE，用DiskGenius工具分配空间</li>
+</ul>
+<h1 id="安装Ubuntu系统"><a href="#安装Ubuntu系统" class="headerlink" title="安装Ubuntu系统"></a>安装Ubuntu系统</h1><p>使用Ventoy安装Ubuntu系统，此处省略</p>
+<h1 id="使用EasyBCD添加开机引导项"><a href="#使用EasyBCD添加开机引导项" class="headerlink" title="使用EasyBCD添加开机引导项"></a>使用EasyBCD添加开机引导项</h1><ol>
+<li>Add New Entry</li>
+<li>Operating Systems选择Linux&#x2F;BSD</li>
+<li>NeoSmartLinux</li>
+<li>Device选择Linux 190M  &#x2F;boot的那个盘</li>
+<li>Add Entry启动项就装上了</li>
+</ol>
+]]></content>
+      <tags>
+        <tag>装机</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>ubuntu扩展磁盘空间</title>
+    <url>/2026/01/04/ubuntu%E6%89%A9%E5%B1%95%E7%A3%81%E7%9B%98%E7%A9%BA%E9%97%B4/</url>
+    <content><![CDATA[<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>查看空间，发现&#x2F;dev&#x2F;vda3已分配100G,逻辑卷ubuntu–lv只用了50G，说明卷组VG还有可用空间</p>
+<p>解决不需要调整物理空间，只需要调整卷组的空间</p>
+<h1 id="1-查看卷组的空闲空间"><a href="#1-查看卷组的空闲空间" class="headerlink" title="1.查看卷组的空闲空间"></a>1.查看卷组的空闲空间</h1><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo vgdisplay</span><br></pre></td></tr></table></figure>
+<p>Free PE &#x2F;Size 如果显示类似50 Gib, 说明还有50G卷组未分配</p>
+<h1 id="2-扩展逻辑卷-LV"><a href="#2-扩展逻辑卷-LV" class="headerlink" title="2.扩展逻辑卷(LV)"></a>2.扩展逻辑卷(LV)</h1><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">使用所有剩余的空间”。</span></span><br><span class="line">sudo lvextend -r -l +100%FREE /dev/mapper/ubuntu--vg-ubuntu--lv</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">只增加 10G</span></span><br><span class="line">sudo lvextend -r -l +10G /dev/mapper/ubuntu--vg-ubuntu--lv</span><br></pre></td></tr></table></figure>
+
+<h1 id="调整文件系统（可省略）"><a href="#调整文件系统（可省略）" class="headerlink" title="调整文件系统（可省略）"></a>调整文件系统（可省略）</h1><p>如果<strong>上一步sudo lvextend  加了参数 -r</strong> , 系统会自动检测逻辑卷上的文件系统类型，并在扩容 LV 后，自动调用相应的命令（<code>resize2fs</code> 或 <code>xfs_growfs</code>）来同步扩容文件系统。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">ext4文件系统</span></span><br><span class="line">sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv</span><br></pre></td></tr></table></figure>
+
+<h1 id="验证结果"><a href="#验证结果" class="headerlink" title="验证结果"></a>验证结果</h1><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">df -h </span><br></pre></td></tr></table></figure>
+
+
+<h1 id="未分配空间怎么添加到LVM"><a href="#未分配空间怎么添加到LVM" class="headerlink" title="未分配空间怎么添加到LVM"></a>未分配空间怎么添加到LVM</h1><ol>
+<li>创建新的分区</li>
+<li>把分区创建为物理卷PV  pvcreate &#x2F;dev&#x2F;sda3</li>
+<li>vgs查看</li>
+<li>vgextend ubuntu-lv &#x2F;dev&#x2F;sda3</li>
+<li>lvextend -l +100%FREE &#x2F;dev&#x2F;mapper&#x2F;centos-root</li>
+<li>扩展文件系统 xfs_growfs或resize2fs</li>
+</ol>
+<p>加设备-&gt;做PV-&gt;扩VG-&gt;扩LV-&gt;生长文件系统</p>
+]]></content>
+      <tags>
+        <tag>linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>wsl安装dify</title>
+    <url>/2025/12/08/wsl%E5%AE%89%E8%A3%85dify/</url>
+    <content><![CDATA[<h1 id="1-下载最新的dify版本"><a href="#1-下载最新的dify版本" class="headerlink" title="1.下载最新的dify版本"></a>1.下载最新的dify版本</h1><p><a href="https://github.com/langgenius/dify">langgenius&#x2F;dify: Production-ready platform for agentic workflow development.</a></p>
+<h1 id="2-启动dify"><a href="#2-启动dify" class="headerlink" title="2.启动dify"></a>2.启动dify</h1><p>将dify-main.zip 上传到wsl ubuntu系统的&#x2F;opt目录下并解压</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cd dify</span><br><span class="line">cd docker</span><br><span class="line">cp .env.example .env</span><br><span class="line">docker compose up -d</span><br></pre></td></tr></table></figure>
+
+<h1 id="3-配置转发"><a href="#3-配置转发" class="headerlink" title="3.配置转发"></a>3.配置转发</h1><p>如果win11的wsl网络模式是mirror模式，以下可跳过</p>
+<p>win10的wsl没有开启镜像模式，配置端口转发</p>
+<figure class="highlight cmd"><table><tr><td class="code"><pre><span class="line">netsh interface portproxy add v4tov4 listenport=<span class="number">5173</span> listenaddress=<span class="number">0</span>.<span class="number">0</span>.<span class="number">0</span>.<span class="number">0</span> connectport=<span class="number">5173</span> connectaddress=<span class="number">172</span>.<span class="number">26</span>.<span class="number">178</span>.<span class="number">31</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>listenport是Windows上的端口，</li>
+<li>listenaddress是Windows上监听此端口的IP地址（通常为0.0.0.0以监听所有IP），</li>
+<li>connectport是WSL中服务的端口，</li>
+<li>connectaddress是WSL中服务的IP地址</li>
+</ul>
+<p>查看端口代理</p>
+<figure class="highlight cmd"><table><tr><td class="code"><pre><span class="line">netsh interface portproxy show all</span><br></pre></td></tr></table></figure>
+
+<p>宿主机给wsl配置代理,访问网络</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">export http_proxy=http://192.168.0.94:7890 &amp;&amp; export https_proxy=http://192.168.0.94:7890</span><br></pre></td></tr></table></figure>
+
+<h1 id="4-启动异常处理"><a href="#4-启动异常处理" class="headerlink" title="4.启动异常处理"></a>4.启动异常处理</h1><p><a href="http://localhost/">http://localhost</a><br>出现异常：<br>dify Setup failed: PermissionDenied (persistent) at write &#x3D;&gt; permission denied Context: service: fs path: privkeys&#x2F;e4c12d52-1c20-4753-a3c0-45ebed0575d6&#x2F;private.pem Source: Permission denied (os error 13)<br>解决办法：<br>chmod 777 dify&#x2F;docker&#x2F;volumes&#x2F;app&#x2F;storage</p>
+<h1 id="在dify-1-8添加ollama模型时，显示模型为空的解决办法"><a href="#在dify-1-8添加ollama模型时，显示模型为空的解决办法" class="headerlink" title="在dify 1.8添加ollama模型时，显示模型为空的解决办法"></a>在dify 1.8添加ollama模型时，显示模型为空的解决办法</h1><p>晚上把dify 升级到1.8版本，发现连接ollama的时候，显示模型，模型不出来，显示模型那里，始终为0个模型，在“添加模型”那里无论如何配置都没办法。</p>
+<p>排查思路</p>
+<ol>
+<li>在浏览器输入ollama，查看ollama正常，模型显示正常，说明ollama没有问题<br>查看docker-compose.yml，发现这个变量是由.env控制的</li>
+</ol>
+<p>在&#x2F;dify&#x2F;docker目录，打开.env文件，看到这个参数如下：</p>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><a href="https://zhida.zhihu.com/search?content_id=262772041&content_type=Article&match_order=1&q=PLUGIN_PYTHON_ENV_INIT_TIMEOUT&zhida_source=entity">PLUGIN_PYTHON_ENV_INIT_TIMEOUT</a>&#x3D;120</p>
+<p><a href="https://zhida.zhihu.com/search?content_id=262772041&content_type=Article&match_order=1&q=PLUGIN_MAX_EXECUTION_TIMEOUT&zhida_source=entity">PLUGIN_MAX_EXECUTION_TIMEOUT</a>&#x3D;600</p>
+<p><a href="https://zhida.zhihu.com/search?content_id=262772041&content_type=Article&match_order=1&q=PIP_MIRROR_URL&zhida_source=entity">PIP_MIRROR_URL</a>&#x3D;  </p>
+<p>Dify默认配置项的数字太小，改大即可，我修改的数字为：</p>
+<p>PLUGIN_PYTHON_ENV_INIT_TIMEOUT&#x3D;1200<br>PLUGIN_MAX_EXECUTION_TIMEOUT&#x3D;900<br>PIP_MIRROR_URL&#x3D;<a href="https://link.zhihu.com/?target=https://pypi.tuna.tsinghua.edu.cn/simple">https://pypi.tuna.tsinghua.edu.cn/simple</a><br>#PIP_MIRROR_URL&#x3D;  </p>
+<p>并重启dify</p>
+<p>sudo docker-compose down<br>sudo docker-compose up -d</p>
+<p>再次打开dify,模型就出来了：</p>
+]]></content>
+      <categories>
+        <category>信息技术</category>
+      </categories>
+      <tags>
+        <tag>linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>单词组合能力</title>
+    <url>/2025/12/18/%E5%8D%95%E8%AF%8D%E7%BB%84%E5%90%88%E8%83%BD%E5%8A%9B/</url>
+    <content><![CDATA[]]></content>
+  </entry>
+  <entry>
+    <title>安装paddle OCR</title>
+    <url>/2025/12/27/%E5%AE%89%E8%A3%85paddle-OCR/</url>
+    <content><![CDATA[<h1 id="飞桨快速安装"><a href="#飞桨快速安装" class="headerlink" title="飞桨快速安装"></a>飞桨快速安装</h1><p><a href="https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/develop/install/pip/linux-pip.html">开始使用_飞桨-源于产业实践的开源深度学习平台</a></p>
+<h1 id="升级cuda-11-8"><a href="#升级cuda-11-8" class="headerlink" title="升级cuda 11.8"></a>升级cuda 11.8</h1><p><a href="https://developer.nvidia.com/cuda-11-8-0-download-archive?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=22.04&target_type=runfile_local">CUDA Toolkit 11.8 Downloads | NVIDIA Developer</a></p>
+<p><img src="http://img.leeabc.cn/i/2025/12/27/h91db0.jpg" alt="ubuntu  cuda11.8"></p>
+<p>[安装CUDA11.8 【Ubuntu 20.04]_cuda11.8安装-CSDN博客](<a href="https://blog.csdn.net/2201_75663877/article/details/145207222">https://blog.csdn.net/2201_75663877/article/details/145207222</a>)</p>
+<p>注意事项  cuda的多版本管理</p>
+<h1 id="安装paddle-OCR"><a href="#安装paddle-OCR" class="headerlink" title="安装paddle OCR"></a>安装paddle OCR</h1><p><a href="https://github.com/PaddlePaddle/PaddleOCR">PaddlePaddle&#x2F;PaddleOCR: Turn any PDF or image document into structured data for your AI. A powerful, lightweight OCR toolkit that bridges the gap between images&#x2F;PDFs and LLMs. Supports 100+ languages.</a></p>
+<p>paddleocr ocr -i <a href="https://paddle-model-ecology.bj.bcebos.com/paddlex/imgs/demo_image/general_ocr_002.png">https://paddle-model-ecology.bj.bcebos.com/paddlex/imgs/demo_image/general_ocr_002.png</a> –use_doc_orientation_classify False –use_doc_unwarping False –use_textline_orientation False</p>
+<h1 id="PaddleOCR-VL-智能文档解析系统"><a href="#PaddleOCR-VL-智能文档解析系统" class="headerlink" title="PaddleOCR-VL 智能文档解析系统"></a>PaddleOCR-VL 智能文档解析系统</h1><p><a href="https://aistudio.baidu.com/projectdetail/9660618">【PaddleOCR-VL】 智能文档解析系统（模型基础功能体验教程） - 飞桨AI Studio星河社区</a></p>
+]]></content>
+      <tags>
+        <tag>python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>英语中考单词</title>
+    <url>/2026/01/29/%E8%8B%B1%E8%AF%AD%E4%B8%AD%E8%80%83%E5%8D%95%E8%AF%8D/</url>
+    <content><![CDATA[]]></content>
   </entry>
   <entry>
     <title>若依架构拆解</title>
@@ -597,9 +643,19 @@
 ]]></content>
   </entry>
   <entry>
+    <title>物理机虚拟化迁移到vmware</title>
+    <url>/2025/12/10/%E7%89%A9%E7%90%86%E6%9C%BA%E8%99%9A%E6%8B%9F%E5%8C%96%E8%BF%81%E7%A7%BB%E5%88%B0vmware/</url>
+    <content><![CDATA[<h1 id="在DiskGenius中打开VMware虚拟机界面"><a href="#在DiskGenius中打开VMware虚拟机界面" class="headerlink" title="在DiskGenius中打开VMware虚拟机界面"></a>在DiskGenius中打开VMware虚拟机界面</h1><h1 id="步骤2：创建虚拟磁盘与VMware虚拟机"><a href="#步骤2：创建虚拟磁盘与VMware虚拟机" class="headerlink" title="步骤2：创建虚拟磁盘与VMware虚拟机"></a>步骤2：创建虚拟磁盘与VMware虚拟机</h1>]]></content>
+      <tags>
+        <tag>linux</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>英语使用</title>
     <url>/2025/12/03/%E8%8B%B1%E8%AF%AD%E4%BD%BF%E7%94%A8/</url>
-    <content><![CDATA[]]></content>
+    <content><![CDATA[<h1 id="湖州人才大脑平台"><a href="#湖州人才大脑平台" class="headerlink" title="湖州人才大脑平台"></a>湖州人才大脑平台</h1><p><a href="https://zhrc.huzhou.gov.cn/">https://zhrc.huzhou.gov.cn/</a></p>
+<h1 id="杭州市人才可视化设计"><a href="#杭州市人才可视化设计" class="headerlink" title="杭州市人才可视化设计"></a>杭州市人才可视化设计</h1><p><img src="http://img.leeabc.cn/i/2026/01/09/mcgfyv.png" alt="vlcsnap-2026-01-09-13h46m16s708"><br><img src="http://img.leeabc.cn/i/2026/01/09/mcglvv.png" alt="vlcsnap-2026-01-09-13h46m34s019"><br><img src="http://img.leeabc.cn/i/2026/01/09/mcgzql.png" alt="vlcsnap-2026-01-09-13h46m42s560"></p>
+]]></content>
       <categories>
         <category>英语学习</category>
       </categories>
@@ -611,7 +667,140 @@
   <entry>
     <title>词汇学习</title>
     <url>/2025/12/03/%E8%AF%8D%E6%B1%87%E5%AD%A6%E4%B9%A0/</url>
-    <content><![CDATA[]]></content>
+    <content><![CDATA[<h1 id="A"><a href="#A" class="headerlink" title="A"></a>A</h1><p>ability<br>above<br>abroad<br>accept<br>accident<br>accurate<br>achieve<br><strong>actually</strong><br>adult<br>advantage<br>adventure<br>advertisement<br>affect<br>afford<br>against<br>ahead<br>aim<br>alarm<br><strong>allow</strong><br>altogether<br>ambition<br>amount<br>amusement<br>amusing<br>ancient<br>apologize<br>apply<br>argue<br>army<br>arrange<br>arrive<br>arrival<br>article<br>assistant<br>attack<br>attention<br>attitude<br><strong>attract</strong><br><strong>attractive</strong><br>audience<br>automatic<br><strong>available</strong><br><strong>average</strong><br>award<br>avoid<br>awful</p>
+<h1 id="B"><a href="#B" class="headerlink" title="B"></a>B</h1><p>background<br>bakery<br><strong>balance</strong><br>ballon<br><strong>bank</strong><br>base<br>basic<br>battery<br>battle<br>beach<br>beat<br>beef<br>beg<br>behaviour<br>belong<br>belt<br>bicycle<br>bill<br>bin<br>biscuit<br>bite<br>blanket<br>blind<br>block<br>blood<br>blow<br>board<br>boil<br>boiled<br>boiling<br>bored<br>boring<br>brain<br>breath   n. 呼吸<br>breathe  v.呼吸<br>broadcast<br>butter<br>butterfly<br>button</p>
+<h1 id="C"><a href="#C" class="headerlink" title="C"></a>C</h1><p>cabbage<br>cafe<br>cancel<br>capital<br>captain<br>case<br>cave<br>celebrate<br>cent<br>centre<br>century<br>certainly<br>chain<br>changeable<br>character<br>charge<br>chemical<br>chemistry<br>chief<br>chruch<br>circle<br>citizen<br>clerk  n.职员，办事员<br>clinic  n.诊所；医务室<br>conclusion  n.结论，结局<br>conference n.正式的会议<br>confident  adj 自信的<br>confuse<br>confused<br>confusing<br>congratulation<br>consist of<br>connect<br>contact<br>contest<br>convenient<br>correct<br>cotton<br>cough<br>couple<br>course<br>crowd<br>crowded<br>custom<br>customer<br>customs  n.海关<br>cycle    v.骑自行车</p>
+<h1 id="D"><a href="#D" class="headerlink" title="D"></a>D</h1><p>daily<br>damage<br>dare<br>deal<br>debate<br>decide<br>decision<br>decorate<br>degree<br>delay<br>deliver<br>deny<br>depature<br>depend<br>dependent<br>independent<br>describe<br>deserve<br>desire<br>destory<br>detail<br>detective<br>develop<br>developed<br>developing<br>development<br>dial<br>dialogue(dialog)<br>diary<br>dictionary<br>difference<br>different<br>dificullt<br>difficulty<br>dig<br>direction<br>direct<br>directly<br>director<br>disabled<br>disadvantage<br>disappear<br>disappointed<br>disappointing<br>disaster<br>discover<br>discuss<br>discussion<br>dish<br>dishonest<br>distance<br>disturb<br>divide<br>double<br>download<br>downstairs<br>dull<br>duty</p>
+<h1 id="E"><a href="#E" class="headerlink" title="E"></a>E</h1><p>eager<br>economy<br>educational<br>effect  n.效果<br>effective  adj. 有效果的<br>effort  n.精力<br>electric adj 电的<br>electricity  n.电<br>elementary adj 初级的<br>embarrassed adj 尴尬的<br>emergency  n.紧急情况<br>encourage<br>enemy<br>engine<br>engineer<br>enrich<br>enter<br>entrance n.入口<br>entertainment<br>envelope<br>equal<br>escape<br>event<br>exactly<br>exam&#x3D;examination<br>examine v.检查<br>excellecnt<br>except  注意和besides的区别<br>excuse  v.原谅 n.借口<br>exercise  训练不可数，专门的训练可数，前面有定语<br>exhibition  n.展览会<br>exsit<br>exit<br>expect<br>experiment<br>explore<br>explain<br>express<br>extra</p>
+<h1 id="F"><a href="#F" class="headerlink" title="F"></a>F</h1><p>fable<br>fair<br>unfair<br><strong>familiar</strong><br>fare<br>fasten<br>favour (favor) in favour of 赞成<br>fear<br>female<br>male<br>fence<br>ferry<br>fever<br>figure  n. 体型；外形<br>fill<br>final<br>fix<br>flash<br>flat<br>flexible  adj 灵活的<br>flu<br>focus<br>following ajd 以下的<br>fond<br>forecast  n.v 预告<br>foreign<br>forgetful<br>forgive<br>fountain  n.喷泉<br>freedom<br>freeze<br>freezing<br>frozen<br>fried<br>friendly<br>friendship<br>frighten<br>frightened<br>rightening<br>fuel<br>furniture</p>
+<h1 id="G"><a href="#G" class="headerlink" title="G"></a>G</h1><p>gain<br>gas<br>general<br>generation<br>generous<br>gentle<br>gentleman<br>gently<br>geography<br>gift<br>goal<br>gold<br>golden<br>government<br>grade<br>graduate<br>group<br>guest<br>guide<br>gun</p>
+<h1 id="H"><a href="#H" class="headerlink" title="H"></a>H</h1><p>hall<br>hang<br>harm<br>harmful<br>hate<br>headline    n. 大字标题（报刊）<br>headmaster<br>heart<br>heat<br>hesitate  v. 犹豫<br>historical<br>history<br>honour(honor)<br>horrible<br>host<br>hostess<br>hug<br>huge<br>husband<br><strong>ignore</strong><br>imagine<br><strong>immediately</strong><br>importance<br>important<br>impossible<br>impression<br>improve<br>inch<br>include<br>including<br>income<br><strong>increase</strong><br><strong>independent</strong><br>industry<br>influence<br>information<br>instead<br>instruction<br>interest<br>interview<br>invent<br>invention<br>inventor<br><strong>invitation</strong><br><strong>invite</strong><br>iron<br>item</p>
+<h1 id="J"><a href="#J" class="headerlink" title="J"></a>J</h1><p>journalist<br>judge<br>junior</p>
+<h1 id="K"><a href="#K" class="headerlink" title="K"></a>K</h1><p>keen<br>keyboard<br>kick<br>kindergarten</p>
+<h1 id="L"><a href="#L" class="headerlink" title="L"></a>L</h1><p>lab<br>laboratory<br>lamp<br>language<br>later<br>law<br>lawyer<br>lay  laid laid  v 放，下蛋<br>lecture<br>lever<br>librarian</p>
+<table>
+<thead>
+<tr>
+<th>原形</th>
+<th>过去式</th>
+<th>过去分词</th>
+<th>现在分词</th>
+<th>词义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>lie</td>
+<td>lay</td>
+<td>lain</td>
+<td>lying</td>
+<td>躺；位于</td>
+</tr>
+<tr>
+<td>lie</td>
+<td>lied</td>
+<td>lied</td>
+<td>lying</td>
+<td>说谎</td>
+</tr>
+<tr>
+<td>lay</td>
+<td>laid</td>
+<td>laid</td>
+<td>laying</td>
+<td>放；下蛋</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>lift</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>limit</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>limited</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>line</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>link</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>liquid</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>litter</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>local</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>locate     v.坐落于; 确定……的地方</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>location  n.位置，场所</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>luggage   n.行李</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<h1 id="M"><a href="#M" class="headerlink" title="M"></a>M</h1><p>machine<br>mad<br>magazine<br>main<br>major<br>male<br>manage<br>manner<br>marry<br>married<br>marriage<br>material<br>matter<br>meal<br>medical<br>medicine<br>medium<br>memory<br>mention<br>menu<br>message<br>metal<br>method<br>mile<br>minus<br>mirror<br>mix<br>mixture<br>mood<br>motorcycle<br>movie<br>mushroom<br><strong>narrow</strong><br>nationality<br>native<br>natural<br>nature<br>naughty<br>necessary<br>neighbour(neighbor)<br>neighbourhood<br>network<br>noise<br>noisy<br>novel<br>notice</p>
+<h1 id="O"><a href="#O" class="headerlink" title="O"></a>O</h1><p>obey<br>observe<br>offer<br>officer<br>online<br>operate<br>operation<br>opinion<br>opposite<br>ordinary<br>organization<br>organize<br>ought<br>oven</p>
+<h1 id="P"><a href="#P" class="headerlink" title="P"></a>P</h1><p>Pacific<br>pack<br>pain<br>pale<br>Paris<br>partner<br>passage<br>passenger<br>passport<br>patient<br>pearl<br>perfect<br>performance<br>perhaps<br>personal<br>physics<br>physical<br>pill<br>pilot<br>pin<br>pineapple<br>pioneer<br>planet<br>plastic<br>plate<br>platform<br>pleasant<br>pleased<br>pleasure<br>poem<br>poet<br>pole<br>politics<br>pollute<br>pollution<br>pool<br>popular<br>population<br>poster<br>pot<br>pound<br>power<br>powerful<br>practise<br>practice<br>praise<br>precious<br>predict<br>perfer<br>present<br>president<br>press<br><strong>pretend</strong><br>prevent<br>price<br>primary<br>print<br>prison<br>private<br>prize<br>probable<br>probably<br>process<br>produce<br>product<br>professional<br>programme<br>progress<br>promise<br>pronounce<br>pronunciation<br>properly<br>prove<br>proverb<br>provide<br>public<br>publish<br>purpose</p>
+<h1 id="Q"><a href="#Q" class="headerlink" title="Q"></a>Q</h1><p>quality<br>quarter<br>quiz</p>
+<h1 id="R"><a href="#R" class="headerlink" title="R"></a>R</h1><p>race<br>railway<br>raise<br>rarely<br>rather<br>realize<br>recent<br>recently<br>record<br>recycle<br>reduce<br>reference<br>refuse<br>regular<br>relationship<br>relative<br>relax<br>relaxed<br>relaxing<br>release<br>rely<br>remind<br>reply<br>republic<br>require<br>research<br>resource<br>respect<br>response<br><strong>responsibility</strong><br><strong>responsible</strong><br>result<br>retired<br>review<br>reward<br>rid<br>roast<br>rocket<br>role<br>root<br>rope<br>rough<br>rude<br>rule<br>rush</p>
+<h1 id="S"><a href="#S" class="headerlink" title="S"></a>S</h1><p>salary<br>sale<br>salt<br>salty<br>satisfied<br>satisfying<br>sauce<br>schedule<br>score<br>screen<br>seafood<br>search<br>secondary<br>secret<br>secretary<br>section<br>seed<br>seem<br>select<br>senior<br>sense<br>serve<br>service<br>servant<br>settle<br>several<br>shame<br>shower<br>shy<br>sight<br>sightseeing<br>signal<br>silly<br>similar<br>simple<br>single<br>situation<br>social<br>society<br>soldier<br>solution<br>solve<br>spare<br>spread<br>staff<br>stamp<br>state<br>steak<br>steam<br>step<br>stick<br>straight<br>strange<br>stress<br>strike<br>strength<br>stupid<br>suffer<br>suggestion<br>support<br>suppose<br>surface<br>survey<br>survive<br>symbol</p>
+]]></content>
       <categories>
         <category>词汇学习</category>
       </categories>
